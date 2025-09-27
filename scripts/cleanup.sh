@@ -8,106 +8,43 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-ENVIRONMENT="${1:-dev}"
-
-echo -e "${YELLOW}⚠️  This will destroy all resources for ${ENVIRONMENT} environment!${NC}"
+echo -e "${YELLOW}⚠️  This will clean up all Docker containers, images, and volumes!${NC}"
 echo "This action cannot be undone."
 echo ""
-read -p "Are you sure you want to continue? Type 'destroy' to confirm: " -r
+read -p "Are you sure you want to continue? Type 'clean' to confirm: " -r
 
-if [[ ! $REPLY == "destroy" ]]; then
+if [[ ! $REPLY == "clean" ]]; then
     echo -e "${GREEN}Cleanup cancelled.${NC}"
     exit 0
 fi
 
-echo -e "${RED}🗑️  Destroying infrastructure...${NC}"
+echo -e "${RED}🗑️  Cleaning up Docker resources...${NC}"
 
-cd terraform
+# Stop and remove containers
+echo -e "${YELLOW}Stopping and removing containers...${NC}"
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml down -v
 
-# Destroy infrastructure
-terraform destroy \
-    -var="environment=${ENVIRONMENT}" \
-    -auto-approve
+# Remove InfraPrime images
+echo -e "${YELLOW}Removing InfraPrime images...${NC}"
+docker images | grep infraprime | awk '{print $3}' | xargs -r docker rmi -f
 
-echo -e "${GREEN}✅ Infrastructure destroyed successfully!${NC}"
+# Remove unused images
+echo -e "${YELLOW}Removing unused images...${NC}"
+docker image prune -f
 
-# scripts/health-check.sh
-#!/bin/bash
+# Remove unused volumes
+echo -e "${YELLOW}Removing unused volumes...${NC}"
+docker volume prune -f
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+# Remove unused networks
+echo -e "${YELLOW}Removing unused networks...${NC}"
+docker network prune -f
 
-echo -e "${GREEN}🏥 Health Check${NC}"
-echo "======================================"
+# Clean up build cache
+echo -e "${YELLOW}Cleaning up build cache...${NC}"
+docker builder prune -f
 
-cd terraform
-
-# Get URLs from Terraform outputs
-ALB_URL=$(terraform output -raw alb_url 2>/dev/null || echo "")
-CLOUDFRONT_URL=$(terraform output -raw cloudfront_url 2>/dev/null || echo "")
-
-if [ -z "$ALB_URL" ]; then
-    echo -e "${RED}❌ Could not get deployment URLs. Infrastructure may not be deployed.${NC}"
-    exit 1
-fi
-
-echo "Backend URL: ${ALB_URL}"
-echo "Frontend URL: ${CLOUDFRONT_URL}"
+echo -e "${GREEN}✅ Cleanup completed successfully!${NC}"
 echo ""
-
-# Check backend health
-echo -e "${YELLOW}Checking backend health...${NC}"
-if curl -f -s "${ALB_URL}/health" > /dev/null; then
-    echo -e "${GREEN}✅ Backend is healthy${NC}"
-    
-    # Get health details
-    echo "Health details:"
-    curl -s "${ALB_URL}/health" | python3 -m json.tool
-else
-    echo -e "${RED}❌ Backend health check failed${NC}"
-    exit 1
-fi
-
-echo ""
-
-# Check frontend
-if [ ! -z "$CLOUDFRONT_URL" ]; then
-    echo -e "${YELLOW}Checking frontend...${NC}"
-    if curl -f -s "${CLOUDFRONT_URL}" > /dev/null; then
-        echo -e "${GREEN}✅ Frontend is accessible${NC}"
-    else
-        echo -e "${RED}❌ Frontend is not accessible${NC}"
-    fi
-fi
-
-echo ""
-
-# Test API endpoints
-echo -e "${YELLOW}Testing API endpoints...${NC}"
-
-# Test data endpoint
-if curl -f -s "${ALB_URL}/api/data" > /dev/null; then
-    echo -e "${GREEN}✅ /api/data endpoint working${NC}"
-else
-    echo -e "${RED}❌ /api/data endpoint failed${NC}"
-fi
-
-# Test stats endpoint
-if curl -f -s "${ALB_URL}/api/stats" > /dev/null; then
-    echo -e "${GREEN}✅ /api/stats endpoint working${NC}"
-else
-    echo -e "${RED}❌ /api/stats endpoint failed${NC}"
-fi
-
-# Test database endpoint
-if curl -f -s "${ALB_URL}/api/test-db" > /dev/null; then
-    echo -e "${GREEN}✅ Database connectivity working${NC}"
-else
-    echo -e "${RED}❌ Database connectivity failed${NC}"
-fi
-
-echo ""
-echo -e "${GREEN}✅ Health check completed!${NC}"
+echo "To start fresh:"
+echo "  ./scripts/setup.sh"

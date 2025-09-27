@@ -1,16 +1,6 @@
-# Terraform
-*.tfstate
-*.tfstate.*
-.terraform/
-.terraform.lock.hcl
-*.tfvars
-!terraform.tfvars.example
-crash.log
-crash.*.log
-
-# AWS
-.aws/
-aws-exports.js
+# Docker
+.dockerignore
+docker-compose.override.yml
 
 # Python
 __pycache__/

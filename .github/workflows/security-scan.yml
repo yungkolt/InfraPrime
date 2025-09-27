@@ -6,8 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: us-east-1
-  PROJECT_NAME: three-tier-app
+  PROJECT_NAME: infraprime
 
 jobs:
   security-scan:
@@ -18,13 +17,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-      
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -34,15 +26,24 @@ jobs:
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
       
-      - name: Run tfsec
-        run: |
-          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
-          tfsec terraform/ --minimum-severity HIGH
-      
       - name: Run Bandit (Python security linter)
         run: |
           pip install bandit
           bandit -r application/backend/src/ -f json -o bandit-report.json
+      
+      - name: Run ESLint security scan
+        run: |
+          cd application/frontend
+          npm install
+          npm audit --audit-level=high
+      
+      - name: Scan Docker images
+        run: |
+          cd application/backend
+          docker build -t infraprime-backend:security-scan .
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy image --exit-code 1 --severity HIGH,CRITICAL \
+            infraprime-backend:security-scan
       
       - name: Upload security scan results
         uses: actions/upload-artifact@v3

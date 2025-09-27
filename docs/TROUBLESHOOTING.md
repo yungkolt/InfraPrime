@@ -1,532 +1,553 @@
-# InfraPrime Troubleshooting Guide
+# InfraPrime Docker Troubleshooting Guide
 
 ## Table of Contents
 1. [Common Issues](#common-issues)
-2. [Infrastructure Problems](#infrastructure-problems)
+2. [Docker Problems](#docker-problems)
 3. [Application Issues](#application-issues)
 4. [Database Problems](#database-problems)
 5. [Networking Issues](#networking-issues)
-6. [Security Issues](#security-issues)
-7. [Performance Problems](#performance-problems)
-8. [Debugging Tools](#debugging-tools)
+6. [Performance Problems](#performance-problems)
+7. [Debugging Tools](#debugging-tools)
+8. [Log Analysis](#log-analysis)
 
 ## Common Issues
 
-### 1. Terraform State Lock Error
-**Problem**: `Error: Error locking state: Error acquiring the state lock`
+### 1. Docker Not Running
+**Problem**: `Cannot connect to the Docker daemon`
 
 **Solutions**:
 ```bash
-# Option 1: Force unlock (use with caution)
-terraform force-unlock <lock-id>
+# Start Docker Desktop
+# On Windows: Start Docker Desktop application
+# On macOS: Start Docker Desktop application
+# On Linux: sudo systemctl start docker
 
-# Option 2: Check who has the lock
-aws dynamodb get-item \
-  --table-name terraform-state-lock \
-  --key '{"LockID":{"S":"infraprime/terraform.tfstate"}}'
+# Check Docker status
+docker info
 
-# Option 3: Manual cleanup if lock is stale
-aws dynamodb delete-item \
-  --table-name terraform-state-lock \
-  --key '{"LockID":{"S":"infraprime/terraform.tfstate"}}'
+# Restart Docker service (Linux)
+sudo systemctl restart docker
 ```
 
-### 2. ECR Image Pull Errors
-**Problem**: `Failed to pull image: pull access denied`
+### 2. Port Already in Use
+**Problem**: `Bind for 0.0.0.0:5000 failed: port is already allocated`
 
 **Solutions**:
 ```bash
-# Check ECR permissions
-aws ecr get-authorization-token
+# Check what's using the port
+netstat -tulpn | grep :5000
+lsof -i :5000
 
-# Login to ECR
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
+# Kill the process using the port
+sudo kill -9 <PID>
 
-# Verify image exists
-aws ecr describe-images --repository-name infraprime-backend
-
-# Check ECS task execution role permissions
-aws iam get-role --role-name ecsTaskExecutionRole
+# Or change the port in docker-compose.yml
+ports:
+  - "5001:5000"  # Use port 5001 instead
 ```
 
-### 3. Application Won't Start
-**Problem**: ECS tasks keep stopping or failing health checks
+### 3. Permission Denied Errors
+**Problem**: `Permission denied` when accessing files or Docker
 
-**Debugging Steps**:
+**Solutions**:
 ```bash
-# Check ECS service events
-aws ecs describe-services \
-  --cluster infraprime-cluster \
-  --services infraprime-backend-service
+# Fix file permissions
+sudo chown -R $USER:$USER .
 
-# Check task definition
-aws ecs describe-task-definition \
-  --task-definition infraprime-backend
+# Fix Docker socket permissions (Linux)
+sudo chmod 666 /var/run/docker.sock
 
-# View container logs
-aws logs get-log-events \
-  --log-group-name /ecs/infraprime-backend \
-  --log-stream-name <log-stream-name>
-
-# Check task status
-aws ecs describe-tasks \
-  --cluster infraprime-cluster \
-  --tasks <task-arn>
+# Add user to docker group (Linux)
+sudo usermod -aG docker $USER
+# Log out and back in
 ```
 
-## Infrastructure Problems
+## Docker Problems
 
-### Terraform Apply Failures
+### 1. Container Won't Start
+**Problem**: Container exits immediately or fails to start
 
-#### Resource Already Exists
-**Error**: `ResourceAlreadyExistsException`
+**Solutions**:
 ```bash
-# Import existing resource
-terraform import aws_security_group.example sg-12345678
+# Check container logs
+docker-compose logs <service-name>
 
-# Or modify resource name in configuration
+# Check container status
+docker-compose ps
+
+# Inspect container
+docker-compose exec <service-name> bash
+
+# Check if image exists
+docker images | grep infraprime
+
+# Rebuild image
+docker-compose build <service-name>
 ```
 
-#### Insufficient Permissions
-**Error**: `AccessDenied` or `UnauthorizedOperation`
-```bash
-# Check current IAM permissions
-aws sts get-caller-identity
-aws iam get-user
-aws iam list-attached-user-policies --user-name <username>
+### 2. Image Build Failures
+**Problem**: `docker build` fails with errors
 
-# Test specific permissions
-aws ec2 describe-vpcs --dry-run
+**Solutions**:
+```bash
+# Check Dockerfile syntax
+docker build --no-cache -t test-image .
+
+# Check for syntax errors
+docker build --progress=plain .
+
+# Clean build cache
+docker builder prune
+
+# Check disk space
+df -h
+docker system df
 ```
 
-#### Resource Limits Exceeded
-**Error**: `LimitExceededException`
+### 3. Volume Mount Issues
+**Problem**: Files not syncing between host and container
+
+**Solutions**:
 ```bash
-# Check service quotas
-aws service-quotas get-service-quota \
-  --service-code ec2 \
-  --quota-code L-34B43A08  # Running On-Demand EC2 instances
+# Check volume mounts
+docker-compose config
 
-# Request quota increase
-aws service-quotas request-service-quota-increase \
-  --service-code ec2 \
-  --quota-code L-34B43A08 \
-  --desired-value 50
-```
+# Verify file permissions
+ls -la application/backend/
 
-### VPC and Networking Issues
+# Check if volume exists
+docker volume ls
 
-#### No Available IP Addresses
-**Problem**: `InsufficientFreeAddressesInSubnet`
-```bash
-# Check subnet utilization
-aws ec2 describe-subnets --subnet-ids subnet-12345
-
-# Calculate available IPs
-# Formula: (2^(32-subnet_mask)) - 5 (AWS reserves 5 IPs)
-
-# Solution: Create larger subnet or additional subnets
-```
-
-#### NAT Gateway Issues
-**Problem**: Instances can't reach internet
-```bash
-# Check NAT Gateway status
-aws ec2 describe-nat-gateways
-
-# Verify route tables
-aws ec2 describe-route-tables
-
-# Check security group rules
-aws ec2 describe-security-groups --group-ids sg-12345
+# Recreate volumes
+docker-compose down -v
+docker-compose up -d
 ```
 
 ## Application Issues
 
-### ECS Service Problems
+### 1. Backend API Not Responding
+**Problem**: API calls return connection refused or timeout
 
-#### Tasks Keep Stopping
-**Debugging**:
+**Solutions**:
 ```bash
-# Check stopped tasks
-aws ecs list-tasks --cluster infraprime-cluster --desired-status STOPPED
+# Check if backend is running
+docker-compose ps backend
 
-# Get stop reason
-aws ecs describe-tasks --cluster infraprime-cluster --tasks <task-arn>
+# Check backend logs
+docker-compose logs backend
 
-# Common reasons and solutions:
-# - Memory limit exceeded: Increase task memory
-# - Health check failures: Fix application /health endpoint
-# - Container exits: Check application logs for errors
+# Test backend directly
+curl http://localhost:5000/health
+
+# Check if port is exposed
+docker-compose port backend 5000
+
+# Restart backend
+docker-compose restart backend
 ```
 
-#### Service Not Scaling
-**Problem**: Auto Scaling not working
-```bash
-# Check Auto Scaling configuration
-aws application-autoscaling describe-scalable-targets \
-  --service-namespace ecs
+### 2. Frontend Not Loading
+**Problem**: Frontend shows blank page or connection errors
 
-# Check CloudWatch metrics
-aws cloudwatch get-metric-statistics \
-  --namespace AWS/ECS \
-  --metric-name CPUUtilization \
-  --start-time 2024-01-01T00:00:00Z \
-  --end-time 2024-01-01T23:59:59Z \
-  --period 300 \
-  --statistics Average
+**Solutions**:
+```bash
+# Check frontend logs
+docker-compose logs frontend
+
+# Check if frontend is built
+docker-compose exec frontend ls -la /app
+
+# Rebuild frontend
+docker-compose build frontend
+
+# Check API URL configuration
+docker-compose exec frontend env | grep REACT_APP
 ```
 
-### Load Balancer Issues
+### 3. Database Connection Issues
+**Problem**: Backend can't connect to database
 
-#### Health Check Failures
-**Problem**: Targets showing as unhealthy
+**Solutions**:
 ```bash
-# Check target group health
-aws elbv2 describe-target-health --target-group-arn <target-group-arn>
+# Check database status
+docker-compose ps database
 
-# Common fixes:
-# 1. Verify health check path exists (/health)
-# 2. Check security group allows health check port
-# 3. Ensure application starts within timeout period
-# 4. Verify health check returns 200 status code
-```
+# Check database logs
+docker-compose logs database
 
-#### SSL Certificate Issues
-**Problem**: SSL/TLS handshake failures
-```bash
-# Check certificate status
-aws acm describe-certificate --certificate-arn <cert-arn>
+# Test database connection
+docker-compose exec database pg_isready -U admin
 
-# Verify domain validation
-aws route53 list-resource-record-sets --hosted-zone-id <zone-id>
+# Check network connectivity
+docker-compose exec backend ping database
 
-# Test SSL connection
-openssl s_client -connect your-domain.com:443 -servername your-domain.com
+# Verify database URL
+docker-compose exec backend env | grep DATABASE_URL
 ```
 
 ## Database Problems
 
-### RDS Connection Issues
+### 1. Database Won't Start
+**Problem**: PostgreSQL container fails to start
 
-#### Can't Connect to Database
-**Problem**: Connection timeouts or refused connections
+**Solutions**:
 ```bash
-# Check RDS instance status
-aws rds describe-db-instances --db-instance-identifier infraprime-db
+# Check database logs
+docker-compose logs database
 
-# Verify security group rules
-aws ec2 describe-security-groups --group-ids sg-database
+# Check if port is available
+netstat -tulpn | grep :5432
 
-# Test connection from ECS task
-aws ecs run-task \
-  --cluster infraprime-cluster \
-  --task-definition debug-task \
-  --overrides '{
-    "containerOverrides": [{
-      "name": "debug",
-      "command": ["psql", "-h", "database-endpoint", "-U", "admin", "-d", "infraprime"]
-    }]
-  }'
+# Check volume permissions
+ls -la postgres_data/
+
+# Remove corrupted volume
+docker-compose down -v
+docker volume rm infraprime_postgres_data
+docker-compose up -d database
 ```
 
-#### High Database CPU
-**Problem**: Database performance issues
-```bash
-# Check performance insights
-aws rds describe-db-instances \
-  --db-instance-identifier infraprime-db \
-  --query 'DBInstances[0].PerformanceInsightsEnabled'
+### 2. Database Connection Refused
+**Problem**: `connection refused` when connecting to database
 
-# Check slow queries
-# Connect to database and run:
-# SELECT query, calls, total_time, mean_time
-# FROM pg_stat_statements
-# ORDER BY total_time DESC
-# LIMIT 10;
+**Solutions**:
+```bash
+# Check if database is ready
+docker-compose exec database pg_isready -U admin
+
+# Check database configuration
+docker-compose exec database cat /var/lib/postgresql/data/postgresql.conf
+
+# Restart database
+docker-compose restart database
+
+# Check network
+docker network ls
+docker network inspect infraprime_infraprime-network
 ```
 
-#### Storage Issues
-**Problem**: Running out of disk space
-```bash
-# Check storage metrics
-aws cloudwatch get-metric-statistics \
-  --namespace AWS/RDS \
-  --metric-name FreeStorageSpace \
-  --dimensions Name=DBInstanceIdentifier,Value=infraprime-db \
-  --start-time 2024-01-01T00:00:00Z \
-  --end-time 2024-01-01T23:59:59Z \
-  --period 3600 \
-  --statistics Average
+### 3. Data Loss or Corruption
+**Problem**: Database data is missing or corrupted
 
-# Enable storage autoscaling if not already enabled
-aws rds modify-db-instance \
-  --db-instance-identifier infraprime-db \
-  --max-allocated-storage 1000
+**Solutions**:
+```bash
+# Check if volume exists
+docker volume ls | grep postgres
+
+# Backup current data
+docker-compose exec database pg_dump -U admin infraprime > backup.sql
+
+# Restore from backup
+docker-compose exec -T database psql -U admin -d infraprime < backup.sql
+
+# Reset database (WARNING: Data loss)
+docker-compose down -v
+docker-compose up -d database
 ```
 
 ## Networking Issues
 
-### DNS Resolution Problems
+### 1. Services Can't Communicate
+**Problem**: Containers can't reach each other
 
-#### Domain Not Resolving
-**Problem**: DNS queries failing
+**Solutions**:
 ```bash
-# Check Route53 hosted zone
-aws route53 list-hosted-zones
+# Check network configuration
+docker network ls
+docker network inspect infraprime_infraprime-network
 
-# Verify DNS records
-aws route53 list-resource-record-sets --hosted-zone-id <zone-id>
+# Test connectivity
+docker-compose exec backend ping database
+docker-compose exec frontend ping backend
 
-# Test DNS resolution
-dig your-domain.com
-nslookup your-domain.com
-
-# Check if using custom DNS servers
-dig @8.8.8.8 your-domain.com
+# Recreate network
+docker-compose down
+docker network prune
+docker-compose up -d
 ```
 
-### VPC Connectivity Issues
+### 2. External Access Issues
+**Problem**: Can't access application from browser
 
-#### Cross-AZ Communication Problems
-**Problem**: Resources in different AZs can't communicate
+**Solutions**:
 ```bash
-# Check VPC configuration
-aws ec2 describe-vpcs --vpc-ids vpc-12345
+# Check if ports are exposed
+docker-compose ps
 
-# Verify subnet routing
-aws ec2 describe-route-tables
+# Test local connectivity
+curl http://localhost:8080
+curl http://localhost:5000/health
 
-# Check NACLs (Network ACLs)
-aws ec2 describe-network-acls --filters "Name=vpc-id,Values=vpc-12345"
+# Check firewall settings
+sudo ufw status
+sudo iptables -L
+
+# Check Docker port mapping
+docker port infraprime-nginx
 ```
 
-#### Internet Gateway Issues
-**Problem**: No internet connectivity
+### 3. DNS Resolution Problems
+**Problem**: Containers can't resolve service names
+
+**Solutions**:
 ```bash
-# Check if IGW is attached
-aws ec2 describe-internet-gateways
+# Check DNS resolution
+docker-compose exec backend nslookup database
+docker-compose exec backend nslookup redis
 
-# Verify route table has route to IGW
-aws ec2 describe-route-tables --filters "Name=vpc-id,Values=vpc-12345"
+# Check /etc/hosts
+docker-compose exec backend cat /etc/hosts
 
-# Should see route: 0.0.0.0/0 -> igw-12345
-```
-
-## Security Issues
-
-### IAM Permission Problems
-
-#### Access Denied Errors
-**Problem**: AWS API calls failing with 403
-```bash
-# Check current permissions
-aws sts get-caller-identity
-
-# Simulate specific action
-aws iam simulate-principal-policy \
-  --policy-source-arn arn:aws:iam::123456789012:user/test-user \
-  --action-names ec2:DescribeInstances \
-  --resource-arns "*"
-
-# Debug with CloudTrail
-aws logs filter-log-events \
-  --log-group-name CloudTrail/APIGateway \
-  --filter-pattern '{ $.errorCode = "AccessDenied" }'
-```
-
-### Security Group Misconfigurations
-
-#### Overly Permissive Rules
-**Problem**: Security groups allowing too much access
-```bash
-# Find security groups allowing 0.0.0.0/0
-aws ec2 describe-security-groups \
-  --query 'SecurityGroups[?IpPermissions[?IpRanges[?CidrIp==`0.0.0.0/0`]]]'
-
-# Audit security group rules
-aws ec2 describe-security-groups \
-  --query 'SecurityGroups[*].[GroupId,GroupName,IpPermissions[*].[IpProtocol,FromPort,ToPort,IpRanges[*].CidrIp]]' \
-  --output table
+# Restart with clean network
+docker-compose down
+docker network prune
+docker-compose up -d
 ```
 
 ## Performance Problems
 
-### High Response Times
+### 1. Slow Application Response
+**Problem**: Application is slow or unresponsive
 
-#### Application Latency
-**Problem**: Slow API responses
+**Solutions**:
 ```bash
-# Check ALB target response times
-aws cloudwatch get-metric-statistics \
-  --namespace AWS/ApplicationELB \
-  --metric-name TargetResponseTime \
-  --dimensions Name=LoadBalancer,Value=app/infraprime-alb/50dc6c495c0c9188 \
-  --start-time 2024-01-01T00:00:00Z \
-  --end-time 2024-01-01T23:59:59Z \
-  --period 300 \
-  --statistics Average,Maximum
+# Check resource usage
+docker stats
 
-# Check ECS service CPU/Memory utilization
-aws cloudwatch get-metric-statistics \
-  --namespace AWS/ECS \
-  --metric-name CPUUtilization \
-  --dimensions Name=ServiceName,Value=infraprime-backend Name=ClusterName,Value=infraprime-cluster \
-  --start-time 2024-01-01T00:00:00Z \
-  --end-time 2024-01-01T23:59:59Z \
-  --period 300 \
-  --statistics Average
+# Check container limits
+docker-compose exec backend cat /sys/fs/cgroup/memory/memory.limit_in_bytes
+
+# Monitor logs for errors
+docker-compose logs | grep -i error
+
+# Check database performance
+docker-compose exec database psql -U admin -d infraprime -c "SELECT * FROM pg_stat_activity;"
 ```
 
-#### Database Performance
-**Problem**: Slow database queries
-```sql
--- Enable query logging (PostgreSQL)
-ALTER SYSTEM SET log_statement = 'all';
-ALTER SYSTEM SET log_min_duration_statement = 1000; -- Log queries > 1 second
-SELECT pg_reload_conf();
+### 2. High Memory Usage
+**Problem**: Containers using too much memory
 
--- Find slow queries
-SELECT query, calls, total_time, mean_time, stddev_time
-FROM pg_stat_statements
-WHERE mean_time > 1000  -- Queries with mean time > 1 second
-ORDER BY total_time DESC
-LIMIT 20;
+**Solutions**:
+```bash
+# Check memory usage
+docker stats --no-stream
 
--- Check for missing indexes
-SELECT schemaname, tablename, attname, n_distinct, correlation
-FROM pg_stats
-WHERE schemaname = 'public'
-  AND n_distinct > 100
-  AND correlation < 0.1;
+# Set memory limits
+# In docker-compose.yml:
+services:
+  backend:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+# Restart with limits
+docker-compose up -d
+```
+
+### 3. Disk Space Issues
+**Problem**: Running out of disk space
+
+**Solutions**:
+```bash
+# Check disk usage
+df -h
+docker system df
+
+# Clean up unused resources
+docker system prune -a
+
+# Remove unused volumes
+docker volume prune
+
+# Clean up logs
+docker-compose logs --tail=0 -f | head -n 0
 ```
 
 ## Debugging Tools
 
-### AWS CLI Debug Mode
+### 1. Container Inspection
 ```bash
-# Enable debug output
-aws --debug ec2 describe-instances
+# Enter running container
+docker-compose exec backend bash
+docker-compose exec frontend sh
 
-# Use specific log level
-export AWS_CLI_FILE_ENCODING=UTF-8
-aws --cli-read-timeout 0 --cli-connect-timeout 60 ec2 describe-instances
+# Check container environment
+docker-compose exec backend env
+
+# Check container processes
+docker-compose exec backend ps aux
+
+# Check container network
+docker-compose exec backend ip addr
 ```
 
-### ECS Debug Commands
+### 2. Log Analysis
 ```bash
-# Get detailed task information
-aws ecs describe-tasks \
-  --cluster infraprime-cluster \
-  --tasks <task-arn> \
-  --include TAGS
+# View all logs
+docker-compose logs
 
-# Stream logs in real-time
-aws logs tail /ecs/infraprime-backend --follow
+# View specific service logs
+docker-compose logs backend
+docker-compose logs frontend
 
-# Run debug container
-aws ecs run-task \
-  --cluster infraprime-cluster \
-  --task-definition infraprime-debug \
-  --network-configuration '{
-    "awsvpcConfiguration": {
-      "subnets": ["subnet-12345"],
-      "securityGroups": ["sg-12345"],
-      "assignPublicIp": "ENABLED"
-    }
-  }'
+# Follow logs in real-time
+docker-compose logs -f backend
+
+# View logs with timestamps
+docker-compose logs -t backend
+
+# Search logs for specific text
+docker-compose logs | grep -i error
+docker-compose logs | grep -i "connection refused"
 ```
 
-### Database Debug Queries
-```sql
--- Check active connections
-SELECT pid, usename, application_name, client_addr, state, query_start, query
-FROM pg_stat_activity
-WHERE state = 'active';
-
--- Check table sizes
-SELECT schemaname, tablename, 
-       pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
-FROM pg_tables
-WHERE schemaname = 'public'
-ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
-
--- Check index usage
-SELECT schemaname, tablename, indexname, idx_scan, idx_tup_read, idx_tup_fetch
-FROM pg_stat_user_indexes
-ORDER BY idx_scan ASC;
-```
-
-### Network Debug Tools
+### 3. Network Debugging
 ```bash
-# Test connectivity from container
-docker run --rm -it amazonlinux:latest bash
-yum install -y telnet curl postgresql
+# Check network configuration
+docker network inspect infraprime_infraprime-network
 
-# Test database connectivity
-telnet rds-endpoint 5432
+# Test connectivity between services
+docker-compose exec backend ping database
+docker-compose exec backend telnet database 5432
 
-# Test HTTP endpoints
-curl -v https://api-endpoint/health
-
-# DNS resolution
-nslookup api-endpoint
+# Check port mappings
+docker-compose port backend 5000
+docker-compose port nginx 80
 ```
 
-## Emergency Procedures
-
-### Application Rollback
+### 4. Health Checks
 ```bash
-# Quick rollback to previous version
-aws ecs update-service \
-  --cluster infraprime-cluster \
-  --service infraprime-backend-service \
-  --task-definition infraprime-backend:PREVIOUS_REVISION
+# Check service health
+docker-compose ps
 
-# Or use blue-green deployment rollback
-./scripts/rollback.sh
+# Test health endpoints
+curl http://localhost:8080/health
+curl http://localhost:5000/health
+
+# Check individual service health
+docker-compose exec backend curl localhost:5000/health
+docker-compose exec database pg_isready -U admin
 ```
 
-### Database Recovery
+## Log Analysis
+
+### 1. Common Log Patterns
+
+#### Backend Logs
 ```bash
-# Restore from latest automated snapshot
-aws rds restore-db-instance-from-db-snapshot \
-  --db-instance-identifier infraprime-db-restored \
-  --db-snapshot-identifier $(aws rds describe-db-snapshots \
-    --db-instance-identifier infraprime-db \
-    --query 'DBSnapshots[0].DBSnapshotIdentifier' \
-    --output text)
+# Application errors
+docker-compose logs backend | grep -i error
+
+# Database connection issues
+docker-compose logs backend | grep -i "database\|postgres"
+
+# API request logs
+docker-compose logs backend | grep -i "GET\|POST\|PUT\|DELETE"
 ```
 
-### Emergency Scaling
+#### Frontend Logs
 ```bash
-# Scale up immediately
-aws ecs update-service \
-  --cluster infraprime-cluster \
-  --service infraprime-backend-service \
-  --desired-count 10
+# Build errors
+docker-compose logs frontend | grep -i "error\|failed"
 
-# Scale database up
-aws rds modify-db-instance \
-  --db-instance-identifier infraprime-db \
-  --db-instance-class db.t3.large \
-  --apply-immediately
+# Network errors
+docker-compose logs frontend | grep -i "network\|connection"
+
+# Module errors
+docker-compose logs frontend | grep -i "module\|import"
 ```
 
-## Contact Information
+#### Database Logs
+```bash
+# Connection errors
+docker-compose logs database | grep -i "connection\|refused"
 
-### Escalation Path
-1. **On-call Engineer**: Check runbook first
-2. **Senior Engineer**: For complex infrastructure issues
-3. **AWS Support**: For AWS service-specific problems
-4. **Manager**: For critical business impact
+# Query errors
+docker-compose logs database | grep -i "error\|failed"
 
-### Emergency Contacts
-- **Primary On-call**: [Your contact]
-- **Secondary On-call**: [Backup contact]
-- **AWS Support Case**: [Support plan details]
-- **Infrastructure Team**: [Team contact]
+# Startup issues
+docker-compose logs database | grep -i "startup\|init"
+```
+
+### 2. Log Monitoring
+```bash
+# Monitor logs in real-time
+docker-compose logs -f | tee application.log
+
+# Filter logs by service and level
+docker-compose logs backend | grep -E "(ERROR|WARN|INFO)"
+
+# Export logs to file
+docker-compose logs > full_logs_$(date +%Y%m%d_%H%M%S).log
+```
+
+## Quick Fixes
+
+### 1. Complete Reset
+```bash
+# Stop and remove everything
+docker-compose down -v
+docker system prune -a
+
+# Rebuild and start
+docker-compose build
+docker-compose up -d
+```
+
+### 2. Service-Specific Reset
+```bash
+# Reset specific service
+docker-compose stop backend
+docker-compose rm -f backend
+docker-compose up -d backend
+```
+
+### 3. Volume Reset
+```bash
+# Reset database
+docker-compose down
+docker volume rm infraprime_postgres_data
+docker-compose up -d database
+```
+
+## Getting Help
+
+### 1. Collect Information
+```bash
+# System information
+docker version
+docker-compose version
+docker system info
+
+# Service status
+docker-compose ps
+docker-compose logs --tail=50
+
+# Resource usage
+docker stats --no-stream
+```
+
+### 2. Common Commands for Support
+```bash
+# Full system report
+docker-compose logs > logs.txt
+docker-compose ps > status.txt
+docker system info > system.txt
+
+# Create support bundle
+tar -czf support_bundle.tar.gz logs.txt status.txt system.txt
+```
+
+### 3. Documentation References
+- [Docker Documentation](https://docs.docker.com/)
+- [Docker Compose Documentation](https://docs.docker.com/compose/)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [React Documentation](https://reactjs.org/docs/)
 
 ---
 
-**Remember**: Always check CloudWatch metrics and logs first. Most issues can be diagnosed through monitoring data before requiring access to individual resources.
+For additional help:
+- Check the [Docker Guide](DOCKER.md)
+- Review the [Deployment Guide](DEPLOYMENT.md)
+- See the [Security Documentation](SECURITY.md)
