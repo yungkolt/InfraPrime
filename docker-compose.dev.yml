@@ -1,0 +1,123 @@
+# Development override for Docker Compose
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  # Development-specific backend configuration
+  backend:
+    build:
+      target: development
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - HOT_RELOAD=true
+      - WERKZEUG_DEBUG_PIN=off
+    volumes:
+      - ./application/backend:/app:cached
+      - /app/__pycache__
+    command: >
+      sh -c "
+        pip install -r requirements-dev.txt &&
+        python -m flask db upgrade &&
+        python app.py
+      "
+    stdin_open: true
+    tty: true
+
+  # Development-specific frontend configuration  
+  frontend:
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - FAST_REFRESH=true
+    volumes:
+      - ./application/frontend:/app:cached
+      - /app/node_modules
+    command: >
+      sh -c "
+        npm install &&
+        npm run dev
+      "
+
+  # Development database with sample data
+  database:
+    environment:
+      - POSTGRES_DB=infraprime_dev
+    volumes:
+      - ./docker/database/init:/docker-entrypoint-initdb.d:ro
+      - ./docker/database/dev-data:/dev-data:ro
+    command: >
+      postgres
+      -c shared_preload_libraries=pg_stat_statements
+      -c pg_stat_statements.track=all
+      -c log_statement=all
+      -c log_min_duration_statement=0
+
+  # Development nginx with live reload support
+  nginx:
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+    environment:
+      - NGINX_ENVSUBST_TEMPLATE_SUFFIX=.template
+
+  # Additional development services
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: infraprime-mailhog
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - infraprime-network
+    profiles:
+      - dev-tools
+
+  # Local MinIO for S3-compatible storage testing
+  minio:
+    image: minio/minio:latest
+    container_name: infraprime-minio
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - infraprime-network
+    profiles:
+      - dev-tools
+
+  # Development file watcher for automated testing
+  test-runner:
+    image: node:18-alpine
+    container_name: infraprime-test-runner
+    working_dir: /app
+    volumes:
+      - ./application/frontend:/app:cached
+    command: >
+      sh -c "
+        npm install &&
+        npm run test:watch
+      "
+    networks:
+      - infraprime-network
+    profiles:
+      - testing
+
+volumes:
+  minio_data:
+    driver: local
+
+# Override network for development
+networks:
+  infraprime-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -39,5 +39,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 # Expose port
 EXPOSE 5000
 
+# Set Python path to include src directory
+ENV PYTHONPATH=/app/src:$PYTHONPATH
+
 # Run the application
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "30", "--keep-alive", "2", "--max-requests", "1000", "--preload", "src.app:app"]

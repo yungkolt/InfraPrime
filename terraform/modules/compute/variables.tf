@@ -39,13 +39,15 @@ variable "ecs_security_group_id" {
 }
 
 variable "ecs_execution_role_arn" {
-  description = "ARN of the ECS execution role"
+  description = "ARN of the ECS execution role (leave empty to create)"
   type        = string
+  default     = ""
 }
 
 variable "ecs_task_role_arn" {
-  description = "ARN of the ECS task role"
+  description = "ARN of the ECS task role (leave empty to create)"
   type        = string
+  default     = ""
 }
 
 # ECS Configuration

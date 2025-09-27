@@ -4,18 +4,18 @@ resource "aws_lb" "main" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [var.alb_security_group_id]
-  subnets           = var.public_subnet_ids
-  
-  enable_deletion_protection = var.environment == "prod" ? true : false
-  enable_http2              = true
+  subnets            = var.public_subnet_ids
+
+  enable_deletion_protection       = var.environment == "prod" ? true : false
+  enable_http2                     = true
   enable_cross_zone_load_balancing = true
-  
+
   access_logs {
     bucket  = aws_s3_bucket.alb_logs.bucket
     prefix  = "alb"
     enabled = true
   }
-  
+
   tags = {
     Name = "${var.project_name}-alb-${var.environment}"
     Type = "Application Load Balancer"
@@ -25,7 +25,7 @@ resource "aws_lb" "main" {
 # S3 Bucket for ALB access logs
 resource "aws_s3_bucket" "alb_logs" {
   bucket = "${var.project_name}-alb-logs-${var.environment}-${random_string.bucket_suffix.result}"
-  
+
   tags = {
     Name = "${var.project_name}-alb-logs-${var.environment}"
     Type = "ALB Access Logs"
@@ -40,15 +40,19 @@ resource "random_string" "bucket_suffix" {
 
 resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
-  
+
   rule {
     id     = "delete_old_logs"
     status = "Enabled"
-    
+
+    filter {
+      prefix = "alb/"
+    }
+
     expiration {
       days = 30
     }
-    
+
     noncurrent_version_expiration {
       noncurrent_days = 1
     }
@@ -57,7 +61,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
 
 resource "aws_s3_bucket_policy" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -100,9 +104,9 @@ resource "aws_lb_target_group" "backend" {
   port     = 5000
   protocol = "HTTP"
   vpc_id   = var.vpc_id
-  
+
   target_type = "ip"
-  
+
   health_check {
     enabled             = true
     healthy_threshold   = 2
@@ -114,13 +118,13 @@ resource "aws_lb_target_group" "backend" {
     port                = "traffic-port"
     protocol            = "HTTP"
   }
-  
+
   stickiness {
     enabled         = false
     type            = "lb_cookie"
     cookie_duration = 86400
   }
-  
+
   tags = {
     Name = "${var.project_name}-backend-tg-${var.environment}"
     Type = "ALB Target Group"
@@ -132,12 +136,12 @@ resource "aws_lb_listener" "backend_http" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
   protocol          = "HTTP"
-  
+
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.backend.arn
   }
-  
+
   tags = {
     Name = "${var.project_name}-http-listener-${var.environment}"
     Type = "ALB Listener"
@@ -147,22 +151,22 @@ resource "aws_lb_listener" "backend_http" {
 # ECS Cluster
 resource "aws_ecs_cluster" "main" {
   name = "${var.project_name}-cluster-${var.environment}"
-  
+
   configuration {
     execute_command_configuration {
       logging = "OVERRIDE"
-      
+
       log_configuration {
         cloud_watch_log_group_name = aws_cloudwatch_log_group.ecs_exec.name
       }
     }
   }
-  
+
   setting {
     name  = "containerInsights"
     value = "enabled"
   }
-  
+
   tags = {
     Name = "${var.project_name}-ecs-cluster-${var.environment}"
     Type = "ECS Cluster"
@@ -173,7 +177,7 @@ resource "aws_ecs_cluster" "main" {
 resource "aws_cloudwatch_log_group" "ecs_exec" {
   name              = "/aws/ecs/exec/${var.project_name}-${var.environment}"
   retention_in_days = 7
-  
+
   tags = {
     Name = "${var.project_name}-ecs-exec-logs-${var.environment}"
     Type = "CloudWatch Log Group"
@@ -184,11 +188,17 @@ resource "aws_cloudwatch_log_group" "ecs_exec" {
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${var.project_name}-backend"
   retention_in_days = var.log_retention_days
-  
+
   tags = {
     Name = "${var.project_name}-ecs-logs-${var.environment}"
     Type = "CloudWatch Log Group"
   }
+}
+
+# Local values for role ARNs
+locals {
+  execution_role_arn = var.ecs_execution_role_arn != "" ? var.ecs_execution_role_arn : aws_iam_role.ecs_execution_role[0].arn
+  task_role_arn      = var.ecs_task_role_arn != "" ? var.ecs_task_role_arn : aws_iam_role.ecs_task_role[0].arn
 }
 
 # ECS Task Definition
@@ -198,16 +208,16 @@ resource "aws_ecs_task_definition" "backend" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.task_cpu
   memory                   = var.task_memory
-  execution_role_arn       = var.ecs_execution_role_arn
-  task_role_arn           = var.ecs_task_role_arn
-  
+  execution_role_arn       = local.execution_role_arn
+  task_role_arn            = local.task_role_arn
+
   container_definitions = jsonencode([
     {
       name  = "backend-api"
       image = "${var.ecr_repository_url}:${var.image_tag}"
-      
+
       essential = true
-      
+
       portMappings = [
         {
           containerPort = 5000
@@ -215,7 +225,7 @@ resource "aws_ecs_task_definition" "backend" {
           name          = "backend-api"
         }
       ]
-      
+
       environment = [
         {
           name  = "ENVIRONMENT"
@@ -246,14 +256,14 @@ resource "aws_ecs_task_definition" "backend" {
           value = var.aws_region
         }
       ]
-      
+
       secrets = [
         {
           name      = "DATABASE_PASSWORD"
           valueFrom = var.database_secret_arn
         }
       ]
-      
+
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -262,7 +272,7 @@ resource "aws_ecs_task_definition" "backend" {
           "awslogs-stream-prefix" = "backend"
         }
       }
-      
+
       healthCheck = {
         command = [
           "CMD-SHELL",
@@ -273,13 +283,13 @@ resource "aws_ecs_task_definition" "backend" {
         retries     = 3
         startPeriod = 60
       }
-      
+
       linuxParameters = {
         initProcessEnabled = true
       }
     }
   ])
-  
+
   tags = {
     Name = "${var.project_name}-backend-task-${var.environment}"
     Type = "ECS Task Definition"
@@ -293,40 +303,34 @@ resource "aws_ecs_service" "backend" {
   task_definition        = aws_ecs_task_definition.backend.arn
   desired_count          = var.desired_count
   launch_type            = "FARGATE"
-  platform_version      = "LATEST"
+  platform_version       = "LATEST"
   enable_execute_command = true
-  
-  deployment_configuration {
-    maximum_percent         = 200
-    minimum_healthy_percent = 100
-    
-    deployment_circuit_breaker {
-      enable   = true
-      rollback = true
-    }
-  }
-  
+
+  # deployment_configuration {
+  #   maximum_percent         = 200
+  #   minimum_healthy_percent = 100
+  # }
+
   network_configuration {
     subnets          = var.private_subnet_ids
     security_groups  = [var.ecs_security_group_id]
     assign_public_ip = false
   }
-  
+
   load_balancer {
     target_group_arn = aws_lb_target_group.backend.arn
     container_name   = "backend-api"
     container_port   = 5000
   }
-  
+
   service_registries {
     registry_arn = aws_service_discovery_service.backend.arn
   }
-  
+
   depends_on = [
-    aws_lb_listener.backend_http,
-    aws_iam_role_policy_attachment.ecs_execution_role_policy
+    aws_lb_listener.backend_http
   ]
-  
+
   tags = {
     Name = "${var.project_name}-backend-service-${var.environment}"
     Type = "ECS Service"
@@ -338,7 +342,7 @@ resource "aws_service_discovery_private_dns_namespace" "main" {
   name        = "${var.project_name}.local"
   description = "Private DNS namespace for ${var.project_name}"
   vpc         = var.vpc_id
-  
+
   tags = {
     Name = "${var.project_name}-service-discovery-${var.environment}"
     Type = "Service Discovery Namespace"
@@ -348,20 +352,18 @@ resource "aws_service_discovery_private_dns_namespace" "main" {
 # Service Discovery Service
 resource "aws_service_discovery_service" "backend" {
   name = "backend"
-  
+
   dns_config {
     namespace_id = aws_service_discovery_private_dns_namespace.main.id
-    
+
     dns_records {
       ttl  = 10
       type = "A"
     }
-    
+
     routing_policy = "MULTIVALUE"
   }
-  
-  health_check_grace_period_seconds = 300
-  
+
   tags = {
     Name = "${var.project_name}-backend-discovery-${var.environment}"
     Type = "Service Discovery Service"
@@ -375,7 +377,7 @@ resource "aws_appautoscaling_target" "ecs" {
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.backend.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
-  
+
   tags = {
     Name = "${var.project_name}-autoscaling-target-${var.environment}"
     Type = "Auto Scaling Target"
@@ -389,7 +391,7 @@ resource "aws_appautoscaling_policy" "ecs_cpu" {
   resource_id        = aws_appautoscaling_target.ecs.resource_id
   scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension
   service_namespace  = aws_appautoscaling_target.ecs.service_namespace
-  
+
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
@@ -407,7 +409,7 @@ resource "aws_appautoscaling_policy" "ecs_memory" {
   resource_id        = aws_appautoscaling_target.ecs.resource_id
   scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension
   service_namespace  = aws_appautoscaling_target.ecs.service_namespace
-  
+
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageMemoryUtilization"
@@ -425,7 +427,7 @@ resource "aws_appautoscaling_policy" "ecs_requests" {
   resource_id        = aws_appautoscaling_target.ecs.resource_id
   scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension
   service_namespace  = aws_appautoscaling_target.ecs.service_namespace
-  
+
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
       predefined_metric_type = "ALBRequestCountPerTarget"
@@ -435,6 +437,81 @@ resource "aws_appautoscaling_policy" "ecs_requests" {
     scale_in_cooldown  = 300
     scale_out_cooldown = 300
   }
+}
+
+# ECS Execution Role (if not provided)
+resource "aws_iam_role" "ecs_execution_role" {
+  count = var.ecs_execution_role_arn == "" ? 1 : 0
+  name  = "${var.project_name}-ecs-execution-role-${var.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.project_name}-ecs-execution-role-${var.environment}"
+    Type = "ECS Execution Role"
+  }
+}
+
+# ECS Task Role (if not provided)
+resource "aws_iam_role" "ecs_task_role" {
+  count = var.ecs_task_role_arn == "" ? 1 : 0
+  name  = "${var.project_name}-ecs-task-role-${var.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.project_name}-ecs-task-role-${var.environment}"
+    Type = "ECS Task Role"
+  }
+}
+
+# Attach AWS managed policy to execution role
+resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
+  count      = var.ecs_execution_role_arn == "" ? 1 : 0
+  role       = aws_iam_role.ecs_execution_role[0].name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# Policy for ECS tasks to access Secrets Manager
+resource "aws_iam_role_policy" "ecs_secrets_policy" {
+  count = var.ecs_execution_role_arn == "" ? 1 : 0
+  name  = "${var.project_name}-ecs-secrets-policy-${var.environment}"
+  role  = aws_iam_role.ecs_execution_role[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = [var.database_secret_arn]
+      }
+    ]
+  })
 }
 
 # Data sources

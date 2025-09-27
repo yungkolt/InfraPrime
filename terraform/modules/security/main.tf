@@ -3,7 +3,7 @@ resource "aws_security_group" "alb" {
   name        = "${var.project_name}-alb-sg-${var.environment}"
   description = "Security group for Application Load Balancer"
   vpc_id      = var.vpc_id
-  
+
   # HTTP access from anywhere
   ingress {
     description = "HTTP"
@@ -12,7 +12,7 @@ resource "aws_security_group" "alb" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   # HTTPS access from anywhere
   ingress {
     description = "HTTPS"
@@ -21,7 +21,7 @@ resource "aws_security_group" "alb" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   # All outbound traffic
   egress {
     description = "All outbound traffic"
@@ -30,7 +30,7 @@ resource "aws_security_group" "alb" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   tags = {
     Name = "${var.project_name}-alb-sg-${var.environment}"
     Type = "ALB Security Group"
@@ -42,7 +42,7 @@ resource "aws_security_group" "ecs_tasks" {
   name        = "${var.project_name}-ecs-tasks-sg-${var.environment}"
   description = "Security group for ECS tasks"
   vpc_id      = var.vpc_id
-  
+
   # Allow traffic from ALB on application port
   ingress {
     description     = "HTTP from ALB"
@@ -51,7 +51,7 @@ resource "aws_security_group" "ecs_tasks" {
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
   }
-  
+
   # Allow traffic from within VPC for health checks
   ingress {
     description = "Health check from VPC"
@@ -60,7 +60,7 @@ resource "aws_security_group" "ecs_tasks" {
     protocol    = "tcp"
     cidr_blocks = [var.vpc_cidr]
   }
-  
+
   # All outbound traffic (for database access, ECR pulls, etc.)
   egress {
     description = "All outbound traffic"
@@ -69,7 +69,7 @@ resource "aws_security_group" "ecs_tasks" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   tags = {
     Name = "${var.project_name}-ecs-tasks-sg-${var.environment}"
     Type = "ECS Tasks Security Group"
@@ -81,7 +81,7 @@ resource "aws_security_group" "database" {
   name        = "${var.project_name}-database-sg-${var.environment}"
   description = "Security group for RDS database"
   vpc_id      = var.vpc_id
-  
+
   # PostgreSQL access from ECS tasks only
   ingress {
     description     = "PostgreSQL from ECS"
@@ -90,7 +90,7 @@ resource "aws_security_group" "database" {
     protocol        = "tcp"
     security_groups = [aws_security_group.ecs_tasks.id]
   }
-  
+
   # PostgreSQL access from within VPC (for admin access)
   ingress {
     description = "PostgreSQL from VPC"
@@ -99,9 +99,9 @@ resource "aws_security_group" "database" {
     protocol    = "tcp"
     cidr_blocks = [var.vpc_cidr]
   }
-  
+
   # No outbound rules needed for RDS
-  
+
   tags = {
     Name = "${var.project_name}-database-sg-${var.environment}"
     Type = "Database Security Group"
@@ -114,7 +114,7 @@ resource "aws_security_group" "bastion" {
   name        = "${var.project_name}-bastion-sg-${var.environment}"
   description = "Security group for bastion host"
   vpc_id      = var.vpc_id
-  
+
   # SSH access from specific IP ranges
   ingress {
     description = "SSH from admin IPs"
@@ -123,7 +123,7 @@ resource "aws_security_group" "bastion" {
     protocol    = "tcp"
     cidr_blocks = var.admin_cidr_blocks
   }
-  
+
   # All outbound traffic
   egress {
     description = "All outbound traffic"
@@ -132,7 +132,7 @@ resource "aws_security_group" "bastion" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   tags = {
     Name = "${var.project_name}-bastion-sg-${var.environment}"
     Type = "Bastion Security Group"
@@ -142,7 +142,7 @@ resource "aws_security_group" "bastion" {
 # IAM Role for ECS Task Execution
 resource "aws_iam_role" "ecs_execution_role" {
   name = "${var.project_name}-ecs-execution-role-${var.environment}"
-  
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -155,7 +155,7 @@ resource "aws_iam_role" "ecs_execution_role" {
       }
     ]
   })
-  
+
   tags = {
     Name = "${var.project_name}-ecs-execution-role-${var.environment}"
     Type = "ECS Execution Role"
@@ -172,7 +172,7 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
 resource "aws_iam_role_policy" "ecs_execution_custom_policy" {
   name = "${var.project_name}-ecs-execution-custom-policy-${var.environment}"
   role = aws_iam_role.ecs_execution_role.id
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -203,7 +203,7 @@ resource "aws_iam_role_policy" "ecs_execution_custom_policy" {
 # IAM Role for ECS Tasks
 resource "aws_iam_role" "ecs_task_role" {
   name = "${var.project_name}-ecs-task-role-${var.environment}"
-  
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -216,7 +216,7 @@ resource "aws_iam_role" "ecs_task_role" {
       }
     ]
   })
-  
+
   tags = {
     Name = "${var.project_name}-ecs-task-role-${var.environment}"
     Type = "ECS Task Role"
@@ -227,7 +227,7 @@ resource "aws_iam_role" "ecs_task_role" {
 resource "aws_iam_role_policy" "ecs_task_policy" {
   name = "${var.project_name}-ecs-task-policy-${var.environment}"
   role = aws_iam_role.ecs_task_role.id
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -283,7 +283,7 @@ resource "aws_iam_role_policy" "ecs_task_policy" {
 # IAM Role for Auto Scaling
 resource "aws_iam_role" "ecs_autoscaling_role" {
   name = "${var.project_name}-ecs-autoscaling-role-${var.environment}"
-  
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -296,7 +296,7 @@ resource "aws_iam_role" "ecs_autoscaling_role" {
       }
     ]
   })
-  
+
   tags = {
     Name = "${var.project_name}-ecs-autoscaling-role-${var.environment}"
     Type = "ECS Auto Scaling Role"
@@ -312,10 +312,9 @@ resource "aws_iam_role_policy_attachment" "ecs_autoscaling_role_policy" {
 # KMS Key for encryption
 resource "aws_kms_key" "main" {
   description         = "KMS key for ${var.project_name} ${var.environment}"
-  key_usage          = "ENCRYPT_DECRYPT"
-  key_spec           = "SYMMETRIC_DEFAULT"
+  key_usage           = "ENCRYPT_DECRYPT"
   enable_key_rotation = true
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -355,7 +354,7 @@ resource "aws_kms_key" "main" {
       }
     ]
   })
-  
+
   tags = {
     Name = "${var.project_name}-kms-key-${var.environment}"
     Type = "KMS Key"

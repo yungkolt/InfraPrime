@@ -129,7 +129,7 @@ variable "monitoring_interval" {
   description = "Enhanced monitoring interval (seconds)"
   type        = number
   default     = 60
-  
+
   validation {
     condition     = contains([0, 1, 5, 10, 15, 30, 60], var.monitoring_interval)
     error_message = "Monitoring interval must be one of: 0, 1, 5, 10, 15, 30, 60."

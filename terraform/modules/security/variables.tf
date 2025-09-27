@@ -27,5 +27,5 @@ variable "enable_bastion" {
 variable "admin_cidr_blocks" {
   description = "CIDR blocks for admin access"
   type        = list(string)
-  default     = ["0.0.0.0/0"]  # Restrict this in production
+  default     = ["0.0.0.0/0"] # Restrict this in production
 }

@@ -1,7 +1,7 @@
 # SNS Topic for CloudWatch Alarms
 resource "aws_sns_topic" "alerts" {
   name = "${var.project_name}-alerts-${var.environment}"
-  
+
   tags = {
     Name = "${var.project_name}-alerts-${var.environment}"
     Type = "SNS Topic"
@@ -19,7 +19,7 @@ resource "aws_sns_topic_subscription" "email" {
 # CloudWatch Dashboard
 resource "aws_cloudwatch_dashboard" "main" {
   dashboard_name = "${var.project_name}-dashboard-${var.environment}"
-  
+
   dashboard_body = jsonencode({
     widgets = [
       {
@@ -28,7 +28,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         y      = 0
         width  = 12
         height = 6
-        
+
         properties = {
           metrics = [
             ["AWS/ECS", "CPUUtilization", "ServiceName", var.ecs_service_name, "ClusterName", var.ecs_cluster_name],
@@ -36,7 +36,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           ]
           view    = "timeSeries"
           stacked = false
-          region  = data.aws_region.current.name
+          region  = data.aws_region.current.id
           title   = "ECS Service Metrics"
           period  = 300
         }
@@ -47,7 +47,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         y      = 0
         width  = 12
         height = 6
-        
+
         properties = {
           metrics = [
             ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", var.alb_arn_suffix],
@@ -58,7 +58,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           ]
           view    = "timeSeries"
           stacked = false
-          region  = data.aws_region.current.name
+          region  = data.aws_region.current.id
           title   = "Application Load Balancer Metrics"
           period  = 300
         }
@@ -69,7 +69,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         y      = 6
         width  = 12
         height = 6
-        
+
         properties = {
           metrics = [
             ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", var.db_instance_identifier],
@@ -79,7 +79,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           ]
           view    = "timeSeries"
           stacked = false
-          region  = data.aws_region.current.name
+          region  = data.aws_region.current.id
           title   = "RDS Database Metrics"
           period  = 300
         }
@@ -90,12 +90,12 @@ resource "aws_cloudwatch_dashboard" "main" {
         y      = 6
         width  = 12
         height = 6
-        
+
         properties = {
-          query   = "SOURCE '/ecs/${var.project_name}-backend'\n| fields @timestamp, @message\n| sort @timestamp desc\n| limit 20"
-          region  = data.aws_region.current.name
-          title   = "Recent Application Logs"
-          view    = "table"
+          query  = "SOURCE '/ecs/${var.project_name}-backend'\n| fields @timestamp, @message\n| sort @timestamp desc\n| limit 20"
+          region = data.aws_region.current.id
+          title  = "Recent Application Logs"
+          view   = "table"
         }
       }
     ]
@@ -115,12 +115,12 @@ resource "aws_cloudwatch_metric_alarm" "ecs_high_cpu" {
   alarm_description   = "This metric monitors ECS CPU utilization"
   alarm_actions       = [aws_sns_topic.alerts.arn]
   ok_actions          = [aws_sns_topic.alerts.arn]
-  
+
   dimensions = {
     ClusterName = var.ecs_cluster_name
     ServiceName = var.ecs_service_name
   }
-  
+
   tags = {
     Name = "${var.project_name}-ecs-high-cpu-${var.environment}"
     Type = "CloudWatch Alarm"
@@ -139,12 +139,12 @@ resource "aws_cloudwatch_metric_alarm" "ecs_high_memory" {
   alarm_description   = "This metric monitors ECS memory utilization"
   alarm_actions       = [aws_sns_topic.alerts.arn]
   ok_actions          = [aws_sns_topic.alerts.arn]
-  
+
   dimensions = {
     ClusterName = var.ecs_cluster_name
     ServiceName = var.ecs_service_name
   }
-  
+
   tags = {
     Name = "${var.project_name}-ecs-high-memory-${var.environment}"
     Type = "CloudWatch Alarm"
@@ -163,12 +163,12 @@ resource "aws_cloudwatch_metric_alarm" "ecs_service_count" {
   alarm_description   = "This metric monitors ECS running task count"
   alarm_actions       = [aws_sns_topic.alerts.arn]
   ok_actions          = [aws_sns_topic.alerts.arn]
-  
+
   dimensions = {
     ClusterName = var.ecs_cluster_name
     ServiceName = var.ecs_service_name
   }
-  
+
   tags = {
     Name = "${var.project_name}-ecs-service-count-${var.environment}"
     Type = "CloudWatch Alarm"
@@ -188,11 +188,11 @@ resource "aws_cloudwatch_metric_alarm" "alb_high_response_time" {
   alarm_description   = "This metric monitors ALB response time"
   alarm_actions       = [aws_sns_topic.alerts.arn]
   ok_actions          = [aws_sns_topic.alerts.arn]
-  
+
   dimensions = {
     LoadBalancer = var.alb_arn_suffix
   }
-  
+
   tags = {
     Name = "${var.project_name}-alb-high-response-time-${var.environment}"
     Type = "CloudWatch Alarm"
@@ -210,11 +210,11 @@ resource "aws_cloudwatch_metric_alarm" "alb_high_4xx_errors" {
   threshold           = "50"
   alarm_description   = "This metric monitors ALB 4XX errors"
   alarm_actions       = [aws_sns_topic.alerts.arn]
-  
+
   dimensions = {
     LoadBalancer = var.alb_arn_suffix
   }
-  
+
   tags = {
     Name = "${var.project_name}-alb-high-4xx-errors-${var.environment}"
     Type = "CloudWatch Alarm"
@@ -232,11 +232,11 @@ resource "aws_cloudwatch_metric_alarm" "alb_high_5xx_errors" {
   threshold           = "10"
   alarm_description   = "This metric monitors ALB 5XX errors"
   alarm_actions       = [aws_sns_topic.alerts.arn]
-  
+
   dimensions = {
     LoadBalancer = var.alb_arn_suffix
   }
-  
+
   tags = {
     Name = "${var.project_name}-alb-high-5xx-errors-${var.environment}"
     Type = "CloudWatch Alarm"
@@ -256,11 +256,11 @@ resource "aws_cloudwatch_metric_alarm" "rds_high_cpu" {
   alarm_description   = "This metric monitors RDS CPU utilization"
   alarm_actions       = [aws_sns_topic.alerts.arn]
   ok_actions          = [aws_sns_topic.alerts.arn]
-  
+
   dimensions = {
     DBInstanceIdentifier = var.db_instance_identifier
   }
-  
+
   tags = {
     Name = "${var.project_name}-rds-high-cpu-${var.environment}"
     Type = "CloudWatch Alarm"
@@ -275,14 +275,14 @@ resource "aws_cloudwatch_metric_alarm" "rds_low_free_storage" {
   namespace           = "AWS/RDS"
   period              = "300"
   statistic           = "Average"
-  threshold           = "2000000000"  # 2GB in bytes
+  threshold           = "2000000000" # 2GB in bytes
   alarm_description   = "This metric monitors RDS free storage space"
   alarm_actions       = [aws_sns_topic.alerts.arn]
-  
+
   dimensions = {
     DBInstanceIdentifier = var.db_instance_identifier
   }
-  
+
   tags = {
     Name = "${var.project_name}-rds-low-free-storage-${var.environment}"
     Type = "CloudWatch Alarm"
@@ -297,14 +297,14 @@ resource "aws_cloudwatch_metric_alarm" "rds_high_connections" {
   namespace           = "AWS/RDS"
   period              = "300"
   statistic           = "Average"
-  threshold           = "15"  # Adjust based on your instance type
+  threshold           = "15" # Adjust based on your instance type
   alarm_description   = "This metric monitors RDS database connections"
   alarm_actions       = [aws_sns_topic.alerts.arn]
-  
+
   dimensions = {
     DBInstanceIdentifier = var.db_instance_identifier
   }
-  
+
   tags = {
     Name = "${var.project_name}-rds-high-connections-${var.environment}"
     Type = "CloudWatch Alarm"
@@ -316,7 +316,7 @@ resource "aws_cloudwatch_log_metric_filter" "application_errors" {
   name           = "${var.project_name}-application-errors-${var.environment}"
   log_group_name = "/ecs/${var.project_name}-backend"
   pattern        = "ERROR"
-  
+
   metric_transformation {
     name      = "ApplicationErrors"
     namespace = "${var.project_name}/${var.environment}"
@@ -336,7 +336,7 @@ resource "aws_cloudwatch_metric_alarm" "application_errors" {
   alarm_description   = "This metric monitors application errors"
   alarm_actions       = [aws_sns_topic.alerts.arn]
   treat_missing_data  = "notBreaching"
-  
+
   tags = {
     Name = "${var.project_name}-application-errors-${var.environment}"
     Type = "CloudWatch Alarm"
@@ -348,7 +348,7 @@ resource "aws_cloudwatch_log_metric_filter" "health_check_failures" {
   name           = "${var.project_name}-health-check-failures-${var.environment}"
   log_group_name = "/ecs/${var.project_name}-backend"
   pattern        = "[timestamp, request_id, level=\"ERROR\", message=\"Health check failed\"]"
-  
+
   metric_transformation {
     name      = "HealthCheckFailures"
     namespace = "${var.project_name}/${var.environment}"
@@ -368,7 +368,7 @@ resource "aws_cloudwatch_metric_alarm" "health_check_failures" {
   alarm_description   = "This metric monitors health check failures"
   alarm_actions       = [aws_sns_topic.alerts.arn]
   treat_missing_data  = "notBreaching"
-  
+
   tags = {
     Name = "${var.project_name}-health-check-failures-${var.environment}"
     Type = "CloudWatch Alarm"
@@ -377,33 +377,36 @@ resource "aws_cloudwatch_metric_alarm" "health_check_failures" {
 
 # Budget Alert
 resource "aws_budgets_budget" "monthly_cost" {
-  count        = var.enable_cost_monitoring ? 1 : 0
-  name         = "${var.project_name}-monthly-budget-${var.environment}"
-  budget_type  = "COST"
-  limit_amount = var.monthly_budget_limit
-  limit_unit   = "USD"
-  time_unit    = "MONTHLY"
+  count             = var.enable_cost_monitoring ? 1 : 0
+  name              = "${var.project_name}-monthly-budget-${var.environment}"
+  budget_type       = "COST"
+  limit_amount      = var.monthly_budget_limit
+  limit_unit        = "USD"
+  time_unit         = "MONTHLY"
   time_period_start = formatdate("YYYY-MM-01_00:00", timestamp())
-  
-  cost_filters = {
-    Tag = [
-      "Project:${var.project_name}",
-      "Environment:${var.environment}"
-    ]
-  }
-  
+
+  # cost_filter {
+  #   name   = "TagKey"
+  #   values = ["Project"]
+  # }
+  # 
+  # cost_filter {
+  #   name   = "TagKey"
+  #   values = ["Environment"]
+  # }
+
   notification {
     comparison_operator        = "GREATER_THAN"
-    threshold                 = 80
-    threshold_type            = "PERCENTAGE"
-    notification_type         = "ACTUAL"
+    threshold                  = 80
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "ACTUAL"
     subscriber_email_addresses = var.notification_email != "" ? [var.notification_email] : []
   }
-  
+
   notification {
     comparison_operator        = "GREATER_THAN"
-    threshold                 = 100
-    threshold_type            = "PERCENTAGE"
+    threshold                  = 100
+    threshold_type             = "PERCENTAGE"
     notification_type          = "FORECASTED"
     subscriber_email_addresses = var.notification_email != "" ? [var.notification_email] : []
   }

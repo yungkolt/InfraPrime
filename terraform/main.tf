@@ -1,3 +1,6 @@
+# terraform/main.tf
+# Main Terraform configuration for InfraPrime three-tier application
+
 # Random password for RDS
 resource "random_password" "db_password" {
   length  = 16
@@ -82,24 +85,27 @@ resource "aws_ecr_repository" "backend" {
   image_scanning_configuration {
     scan_on_push = true
   }
+}
 
-  lifecycle_policy {
-    policy = jsonencode({
-      rules = [{
-        rulePriority = 1
-        description  = "Keep last 10 images"
-        selection = {
-          tagStatus     = "tagged"
-          tagPrefixList = ["v"]
-          countType     = "imageCountMoreThan"
-          countNumber   = 10
-        }
-        action = {
-          type = "expire"
-        }
-      }]
-    })
-  }
+# ECR Lifecycle Policy
+resource "aws_ecr_lifecycle_policy" "backend" {
+  repository = aws_ecr_repository.backend.name
+
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep last 10 images"
+      selection = {
+        tagStatus     = "tagged"
+        tagPrefixList = ["v"]
+        countType     = "imageCountMoreThan"
+        countNumber   = 10
+      }
+      action = {
+        type = "expire"
+      }
+    }]
+  })
 }
 
 # Compute Module
@@ -246,108 +252,4 @@ module "monitoring" {
   alb_arn_suffix   = module.compute.alb_arn_suffix
   
   notification_email = var.notification_email
-}
-
-# terraform/variables.tf
-variable "project_name" {
-  description = "Name of the project"
-  type        = string
-  default     = "three-tier-app"
-}
-
-variable "environment" {
-  description = "Environment name (dev, staging, prod)"
-  type        = string
-  validation {
-    condition     = contains(["dev", "staging", "prod"], var.environment)
-    error_message = "Environment must be dev, staging, or prod."
-  }
-}
-
-variable "aws_region" {
-  description = "AWS region"
-  type        = string
-  default     = "us-east-1"
-}
-
-variable "owner" {
-  description = "Owner of the resources"
-  type        = string
-  default     = "CloudEngineer"
-}
-
-variable "cost_center" {
-  description = "Cost center for billing"
-  type        = string
-  default     = "Engineering"
-}
-
-# Network Configuration
-variable "vpc_cidr" {
-  description = "CIDR block for VPC"
-  type        = string
-  default     = "10.0.0.0/16"
-}
-
-variable "enable_nat_gateway" {
-  description = "Enable NAT Gateway for private subnets"
-  type        = bool
-  default     = true
-}
-
-# Database Configuration
-variable "database_name" {
-  description = "Name of the database"
-  type        = string
-  default     = "threetierapp"
-}
-
-variable "database_username" {
-  description = "Username for the database"
-  type        = string
-  default     = "dbadmin"
-}
-
-variable "db_instance_class" {
-  description = "RDS instance class"
-  type        = string
-  default     = "db.t3.micro"
-}
-
-variable "allocated_storage" {
-  description = "Allocated storage for RDS instance (GB)"
-  type        = number
-  default     = 20
-}
-
-# ECS Configuration
-variable "image_tag" {
-  description = "Docker image tag for the backend"
-  type        = string
-  default     = "latest"
-}
-
-variable "desired_count" {
-  description = "Desired number of ECS tasks"
-  type        = number
-  default     = 2
-}
-
-variable "task_cpu" {
-  description = "CPU units for the ECS task"
-  type        = number
-  default     = 512
-}
-
-variable "task_memory" {
-  description = "Memory for the ECS task"
-  type        = number
-  default     = 1024
-}
-
-# Monitoring Configuration
-variable "notification_email" {
-  description = "Email address for CloudWatch alarms"
-  type        = string
-  default     = "admin@example.com"
 }
