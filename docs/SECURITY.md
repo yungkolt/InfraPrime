@@ -253,7 +253,7 @@ services:
 
 #### Secure Development
 ```bash
-# Use security scanning in CI/CD
+# Use security scanning during development
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
   aquasec/trivy image --exit-code 1 --severity HIGH,CRITICAL \
   infraprime-backend:latest
@@ -280,14 +280,17 @@ USER appuser
 
 ### 1. Vulnerability Scanning
 
-#### Automated Scanning
-```yaml
-# In CI/CD pipeline
-- name: Scan Docker images
-  run: |
-    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-      aquasec/trivy image --exit-code 1 --severity HIGH,CRITICAL \
-      infraprime-backend:latest
+#### Manual Scanning
+```bash
+# Scan Docker images for vulnerabilities
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image --exit-code 1 --severity HIGH,CRITICAL \
+  infraprime-backend:latest
+
+# Scan all images in the project
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image --exit-code 1 --severity HIGH,CRITICAL \
+  infraprime-frontend:latest
 ```
 
 ### 2. Patch Management

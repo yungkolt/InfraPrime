@@ -9,7 +9,8 @@
 6. [Environment Configuration](#environment-configuration)
 7. [Monitoring and Logging](#monitoring-and-logging)
 8. [Backup and Recovery](#backup-and-recovery)
-9. [Troubleshooting](#troubleshooting)
+9. [Security and Maintenance](#security-and-maintenance)
+10. [Troubleshooting](#troubleshooting)
 
 ## Prerequisites
 
@@ -405,11 +406,11 @@ volumes:
 # Use .dockerignore to exclude unnecessary files
 ```
 
-## Security Best Practices
+## Security and Maintenance
 
 ### Container Security
 - Use non-root users in containers
-- Scan images for vulnerabilities
+- Scan images for vulnerabilities using Trivy
 - Keep base images updated
 - Use minimal base images (Alpine)
 
@@ -422,6 +423,17 @@ volumes:
 - Encrypt sensitive data at rest
 - Use environment variables for configuration
 - Regular security scans and updates
+
+### Manual Security Scanning
+```bash
+# Scan images for vulnerabilities
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image infraprime-backend:latest
+
+# Scan with specific severity levels
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image --severity HIGH,CRITICAL infraprime-backend:latest
+```
 
 ## Scaling and Load Balancing
 

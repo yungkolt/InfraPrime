@@ -1,10 +1,8 @@
 # InfraPrime - Three-Tier Web Application
 
-[![Docker CI](https://github.com/yourusername/InfraPrime/workflows/Docker%20CI/badge.svg)](https://github.com/yourusername/InfraPrime/actions)
-[![Security Scan](https://github.com/yourusername/InfraPrime/workflows/Security%20Scan/badge.svg)](https://github.com/yourusername/InfraPrime/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> A production-ready three-tier web application demonstrating modern containerization practices with Docker, automated CI/CD, and comprehensive monitoring.
+> A production-ready three-tier web application demonstrating modern containerization practices with Docker and comprehensive monitoring.
 
 ## 🚀 Project Overview
 
@@ -38,7 +36,6 @@ Internet → Nginx (Reverse Proxy) → Backend (Flask) → Database (PostgreSQL)
 - **Database**: PostgreSQL with automated backups and health checks
 - **Cache**: Redis for session management and caching
 - **Infrastructure**: Docker, Docker Compose, Nginx
-- **CI/CD**: GitHub Actions with automated testing and security scanning
 - **Monitoring**: Prometheus, Grafana, custom metrics
 - **Security**: Container security, image scanning, non-root users
 
@@ -108,9 +105,6 @@ InfraPrime/
 │   ├── build.sh                # Build Docker images
 │   ├── setup.sh                # Environment setup
 │   └── cleanup.sh              # Cleanup resources
-├── 📁 .github/workflows/        # CI/CD pipelines
-│   ├── docker-ci.yml           # Docker CI/CD pipeline
-│   └── security-scan.yml       # Security scanning
 ├── 📁 docker/                   # Docker configuration
 │   ├── 📁 nginx/               # Reverse proxy configuration
 │   ├── 📁 database/            # Database initialization
@@ -174,16 +168,16 @@ InfraPrime/
 - **Performance Testing**: Response time and throughput validation
 - **Container Validation**: Docker image optimization and security
 
-## 🚀 CI/CD Pipeline
+## 🚀 Development Workflow
 
-### Pipeline Stages
-1. **Code Quality**: Linting, testing, security scanning
-2. **Build**: Docker image creation and vulnerability scanning
-3. **Test**: Integration tests with Docker Compose
-4. **Security**: Container and dependency vulnerability scanning
-5. **Deploy**: Local deployment validation
+### Docker Development Process
+1. **Environment Setup**: One-command setup with `./scripts/setup.sh`
+2. **Service Management**: Start/stop services with Docker Compose
+3. **Code Development**: Hot reload with volume mounting
+4. **Testing**: Run tests within containers
+5. **Deployment**: Local deployment with Docker Compose
 
-### Development Workflow
+### Development Features
 - **Hot Reload**: Development containers with live code updates
 - **Volume Mounting**: Local code changes reflected immediately
 - **Environment Management**: Separate dev and production configurations
