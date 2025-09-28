@@ -11,13 +11,21 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 
 ## 🌐 Access Points
 
-| Service | URL | Description |
-|---------|-----|-------------|
-| **Main Application** | http://localhost:8080 | Complete app via nginx proxy |
-| **Backend API** | http://localhost:5000 | Direct API access |
-| **Frontend** | http://localhost:3000 | Direct React dev server |
-| **Database** | localhost:5432 | PostgreSQL (admin/dev_password_123) |
-| **Redis** | localhost:6379 | Cache service |
+### Core Services (Always Available)
+| Service | URL | Description | Status |
+|---------|-----|-------------|--------|
+| **Main Application** | http://localhost:8080 | Complete app via nginx proxy | ✅ Active |
+| **Backend API** | http://localhost:5000 | Direct API access | ✅ Active |
+| **Frontend** | http://localhost:3000 | Direct React dev server | ✅ Active |
+| **Database** | localhost:5432 | PostgreSQL (admin/dev_password_123) | ✅ Active |
+| **Redis** | localhost:6379 | Cache service | ✅ Active |
+
+### Optional Services (Require Additional Commands)
+| Service | URL | Description | Command |
+|---------|-----|-------------|---------|
+| **pgAdmin** | http://localhost:5050 | Database admin (admin@infraprime.local/admin123) | `--profile tools` |
+| **MailHog** | http://localhost:8025 | Email testing | `--profile dev-tools` |
+| **MinIO** | http://localhost:9001 | S3 storage (minioadmin/minioadmin123) | `--profile dev-tools` |
 
 ## 🔧 Essential Commands
 
@@ -35,6 +43,19 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml down -v
 docker system prune -a
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
+```
+
+## 🛠️ Optional Services
+
+```bash
+# Start with database admin (pgAdmin)
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile tools up -d
+
+# Start with development tools (MailHog + MinIO)
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile dev-tools up -d
+
+# Start everything (core + optional)
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile tools --profile dev-tools up -d
 ```
 
 ## 🧪 Test the Application

@@ -53,16 +53,21 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile dev-too
 
 ## Access Points
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| Frontend | http://localhost:3000 | - |
-| Backend API | http://localhost:5000 | - |
-| Nginx Proxy | http://localhost:8080 | - |
-| Database | localhost:5432 | admin / dev_password_123 |
-| Redis | localhost:6379 | - |
-| pgAdmin | http://localhost:5050 | admin@infraprime.local / admin123 |
-| MailHog | http://localhost:8025 | - |
-| MinIO | http://localhost:9001 | minioadmin / minioadmin123 |
+### Core Services (Always Running)
+| Service | URL | Credentials | Status |
+|---------|-----|-------------|--------|
+| **Frontend** | http://localhost:3000 | - | ✅ Active |
+| **Backend API** | http://localhost:5000 | - | ✅ Active |
+| **Nginx Proxy** | http://localhost:8080 | - | ✅ Active |
+| **Database** | localhost:5432 | admin / dev_password_123 | ✅ Active |
+| **Redis** | localhost:6379 | - | ✅ Active |
+
+### Optional Services (Require Profiles)
+| Service | URL | Credentials | Command to Start |
+|---------|-----|-------------|------------------|
+| **pgAdmin** | http://localhost:5050 | admin@infraprime.local / admin123 | `--profile tools` |
+| **MailHog** | http://localhost:8025 | - | `--profile dev-tools` |
+| **MinIO** | http://localhost:9001 | minioadmin / minioadmin123 | `--profile dev-tools` |
 
 ## Common Commands
 
