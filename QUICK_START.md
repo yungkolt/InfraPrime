@@ -73,6 +73,24 @@ curl http://localhost:5000/health
 curl http://localhost:8080/api/data
 ```
 
+## 🔗 Available API Endpoints
+
+### Backend API (Direct Access - http://localhost:5000)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check and system status |
+| `/api/data` | GET | Application data and server info |
+| `/api/users` | GET | List all users |
+| `/api/users` | POST | Create new user |
+| `/api/stats` | GET | API usage statistics |
+| `/api/test-db` | GET | Database connection test |
+
+### Through Nginx Proxy (http://localhost:8080)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/*` | All | All backend API endpoints |
+| `/health` | GET | Nginx health check |
+
 ## 🛠️ Troubleshooting
 
 ### If ports aren't accessible:

@@ -73,6 +73,12 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml ps
 # Main application: http://localhost:8080
 # Direct backend API: http://localhost:5000
 # Direct frontend: http://localhost:3000
+
+# Test API endpoints
+curl http://localhost:5000/health          # Health check
+curl http://localhost:5000/api/data        # Application data
+curl http://localhost:5000/api/users       # List users
+curl http://localhost:5000/api/stats       # API statistics
 ```
 
 ### Manual Setup

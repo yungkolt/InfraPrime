@@ -71,6 +71,24 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile dev-too
 
 > **Important:** The PostgreSQL database runs automatically with core services. pgAdmin is a web-based database administration tool that provides a GUI to manage the database - you only need it for database administration tasks like browsing tables, running SQL queries, or monitoring performance.
 
+## 🔗 API Endpoints
+
+### Backend API (Direct Access - http://localhost:5000)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check and system status |
+| `/api/data` | GET | Application data and server info |
+| `/api/users` | GET | List all users |
+| `/api/users` | POST | Create new user |
+| `/api/stats` | GET | API usage statistics |
+| `/api/test-db` | GET | Database connection test |
+
+### Through Nginx Proxy (http://localhost:8080)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/*` | All | All backend API endpoints |
+| `/health` | GET | Nginx health check |
+
 ## Common Commands
 
 ### Development Workflow
