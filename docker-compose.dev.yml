@@ -1,8 +1,6 @@
 # Development override for Docker Compose
 # Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 
-version: '3.8'
-
 services:
   # Development-specific backend configuration
   backend:
@@ -19,8 +17,7 @@ services:
     command: >
       sh -c "
         pip install -r requirements-dev.txt &&
-        python -m flask db upgrade &&
-        python app.py
+        python src/app.py
       "
     stdin_open: true
     tty: true

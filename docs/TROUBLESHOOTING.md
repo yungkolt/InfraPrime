@@ -104,6 +104,41 @@ df -h
 docker system df
 ```
 
+### 2.1. "No such image" Error
+**Problem**: `Error response from daemon: No such image: infraprime-backend:latest`
+
+**Solutions**:
+```bash
+# Remove the problematic image
+docker rmi infraprime-backend:latest
+
+# Clean up all unused images
+docker image prune -a -f
+
+# Rebuild with fresh cache
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml build --no-cache backend
+
+# Start services
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+
+### 2.2. "target stage 'development' could not be found"
+**Problem**: Docker build fails with missing development stage
+
+**Solutions**:
+```bash
+# Check if Dockerfile has development stage
+grep -n "FROM.*development" application/backend/Dockerfile
+
+# If missing, ensure Dockerfile has both development and production stages
+# The Dockerfile should have:
+# FROM python:3.11-slim as development
+# FROM python:3.11-slim as production
+
+# Rebuild the image
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml build backend
+```
+
 ### 3. Volume Mount Issues
 **Problem**: Files not syncing between host and container
 
@@ -272,11 +307,12 @@ docker-compose up -d
 **Solutions**:
 ```bash
 # Check if ports are exposed
-docker-compose ps
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml ps
 
 # Test local connectivity
 curl http://localhost:8080
 curl http://localhost:5000/health
+curl http://localhost:3000
 
 # Check firewall settings
 sudo ufw status
@@ -284,6 +320,34 @@ sudo iptables -L
 
 # Check Docker port mapping
 docker port infraprime-nginx
+```
+
+### 2.1. Port Access Issues on Windows
+**Problem**: Can only access localhost:8080, other ports not accessible
+
+**Solutions**:
+```bash
+# Check if all services are running
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml ps
+
+# Test each port individually
+curl -I http://localhost:8080  # Nginx (main entry point)
+curl -I http://localhost:5000  # Backend API
+curl -I http://localhost:3000  # Frontend
+
+# Check Windows firewall
+# Windows Defender Firewall might be blocking ports
+# Add exceptions for Docker Desktop
+
+# Restart Docker Desktop
+# Sometimes Docker Desktop on Windows has port binding issues
+# Restart Docker Desktop application
+
+# Use nginx as main entry point
+# All services are accessible through http://localhost:8080:
+# - Frontend: http://localhost:8080
+# - API: http://localhost:8080/api/*
+# - Health: http://localhost:8080/health
 ```
 
 ### 3. DNS Resolution Problems
@@ -487,12 +551,48 @@ docker-compose logs > full_logs_$(date +%Y%m%d_%H%M%S).log
 ### 1. Complete Reset
 ```bash
 # Stop and remove everything
-docker-compose down -v
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml down -v
 docker system prune -a
 
 # Rebuild and start
-docker-compose build
-docker-compose up -d
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+
+### 1.1. Complete Docker Cleanup (Nuclear Option)
+**Problem**: Persistent cache issues, corrupted images, or build failures
+
+**Solutions**:
+```bash
+# Stop all services
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
+
+# Remove all containers
+docker container prune -f
+
+# Remove all images (including application images)
+docker image prune -a -f
+
+# Remove all volumes
+docker volume prune -f
+
+# Remove all networks
+docker network prune -f
+
+# Clean build cache
+docker builder prune -a -f
+
+# Clean system (final cleanup)
+docker system prune -a -f --volumes
+
+# Verify cleanup
+docker ps -a
+docker images
+docker volume ls
+docker network ls
+
+# Fresh start
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 ```
 
 ### 2. Service-Specific Reset

@@ -4,17 +4,22 @@
 
 1. **Start the full development environment:**
    ```bash
-   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
    ```
 
 2. **Start basic services only:**
    ```bash
-   docker-compose up -d database redis
+   docker-compose -f docker-compose.yml up -d database redis
    ```
 
 3. **View logs:**
    ```bash
-   docker-compose logs -f backend frontend
+   docker-compose -f docker-compose.yml -f docker-compose.dev.yml logs -f backend frontend
+   ```
+
+4. **Check service status:**
+   ```bash
+   docker-compose -f docker-compose.yml -f docker-compose.dev.yml ps
    ```
 
 ## Service Profiles
@@ -64,38 +69,38 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile dev-too
 ### Development Workflow
 ```bash
 # Start development environment
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 
 # Rebuild after code changes
-docker-compose build backend frontend
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml build backend frontend
 
 # View service logs
-docker-compose logs -f backend
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml logs -f backend
 
 # Execute commands in containers
-docker-compose exec backend python -m flask shell
-docker-compose exec database psql -U admin -d infraprime
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec backend python src/app.py
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec database psql -U admin -d infraprime
 
 # Stop services
-docker-compose down
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
 
 # Stop and remove volumes (clean slate)
-docker-compose down -v
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml down -v
 ```
 
 ### Database Operations
 ```bash
 # Connect to database
-docker-compose exec database psql -U admin -d infraprime
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec database psql -U admin -d infraprime
 
-# Run database migrations
-docker-compose exec backend python -m flask db upgrade
+# Test database connection
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec database pg_isready -U admin
 
 # Backup database
-docker-compose exec database pg_dump -U admin infraprime > backup.sql
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec database pg_dump -U admin infraprime > backup.sql
 
 # Restore database
-docker-compose exec -T database psql -U admin -d infraprime < backup.sql
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec -T database psql -U admin -d infraprime < backup.sql
 ```
 
 ### SSL Certificate Generation (for HTTPS testing)

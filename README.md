@@ -63,26 +63,31 @@ Internet → Nginx (Reverse Proxy) → Backend (Flask) → Database (PostgreSQL)
 git clone https://github.com/yungkolt/InfraPrime.git
 cd InfraPrime
 
-# Run the setup script
-./scripts/setup.sh
+# Start the development environment
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 
-# Start the application
-./scripts/docker-dev.sh start
+# View service status
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml ps
 
 # Access the application
-open http://localhost:8080
+# Main application: http://localhost:8080
+# Direct backend API: http://localhost:5000
+# Direct frontend: http://localhost:3000
 ```
 
 ### Manual Setup
 ```bash
 # Start the development environment
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 
 # View service status
-docker-compose ps
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml ps
 
 # View logs
-docker-compose logs -f
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml logs -f
+
+# Stop services
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
 ```
 
 ## 📁 Project Structure
@@ -92,22 +97,36 @@ InfraPrime/
 ├── 📁 application/              # Application source code
 │   ├── 📁 backend/              # Flask API application
 │   │   ├── 📁 src/              # Application source code
+│   │   │   ├── __init__.py      # Python package init
 │   │   │   ├── app.py           # Main Flask application
 │   │   │   ├── config.py        # Configuration settings
 │   │   │   └── models.py        # Database models
 │   │   ├── 📁 tests/            # Unit and integration tests
+│   │   │   ├── conftest.py      # Pytest configuration
+│   │   │   ├── test_app.py      # Application tests
+│   │   │   └── test_basic.py    # Basic functionality tests
+│   │   ├── 📁 logs/             # Application logs
 │   │   ├── Dockerfile           # Multi-stage container build
-│   │   ├── requirements.txt     # Python dependencies
+│   │   ├── requirements.txt     # Production Python dependencies
+│   │   ├── requirements-dev.txt # Development Python dependencies
 │   │   └── env.example          # Environment configuration template
 │   └── 📁 frontend/             # React web application
 │       ├── 📁 src/              # React components and logic
 │       │   ├── app.js           # Main application logic
 │       │   ├── index.html       # HTML template
 │       │   ├── styles.css       # CSS styles
-│       │   └── manifest.json    # PWA manifest
+│       │   ├── manifest.json    # PWA manifest
+│       │   └── sw.js            # Service worker
+│       ├── 📁 dist/             # Built frontend assets
 │       ├── 📁 tests/            # Frontend test suite
+│       │   ├── __mocks__/       # Test mocks
+│       │   ├── app.test.js      # Application tests
+│       │   ├── basic.test.js    # Basic functionality tests
+│       │   └── setup.js         # Test setup
+│       ├── 📁 node_modules/     # Node.js dependencies
 │       ├── Dockerfile           # Frontend container build
 │       ├── package.json         # Node.js dependencies
+│       ├── package-lock.json    # Dependency lock file
 │       ├── jest.config.js       # Test configuration
 │       └── env.example          # Environment configuration template
 ├── 📁 scripts/                  # Automation scripts
@@ -118,10 +137,16 @@ InfraPrime/
 ├── 📁 docker/                   # Docker configuration
 │   ├── 📁 nginx/               # Reverse proxy configuration
 │   │   ├── nginx.conf          # Main nginx configuration
-│   │   └── conf.d/             # Additional configurations
+│   │   ├── conf.d/             # Additional configurations
+│   │   │   ├── default.conf    # Default server config
+│   │   │   └── locations.conf  # Location-specific configs
+│   │   ├── generate-ssl.sh     # SSL certificate generation
+│   │   └── ssl/                # SSL certificates
 │   └── 📁 database/            # Database initialization
 │       ├── init/               # Database initialization scripts
+│       │   └── 01-init.sql     # Initial schema
 │       └── dev-data/           # Sample data
+│           └── sample-data.sql # Sample data for development
 ├── 📁 docs/                     # Comprehensive documentation
 │   ├── DEPLOYMENT.md           # Deployment guide
 │   ├── DOCKER.md               # Docker development guide
@@ -129,6 +154,7 @@ InfraPrime/
 │   └── TROUBLESHOOTING.md      # Issue resolution guide
 ├── 📄 docker-compose.yml       # Main services configuration
 ├── 📄 docker-compose.dev.yml   # Development overrides
+├── 📄 QUICK_START.md           # Quick start guide
 ├── 📄 .gitignore               # Git ignore rules
 ├── 📄 LICENSE                  # MIT License
 ├── 📄 CHANGELOG.md             # Version history
@@ -269,21 +295,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ```bash
 # Development
-./scripts/docker-dev.sh start     # Start all services
-./scripts/docker-dev.sh stop      # Stop all services
-./scripts/docker-dev.sh logs      # View logs
-./scripts/docker-dev.sh status    # Check status
-./scripts/docker-dev.sh test      # Run tests
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d    # Start all services
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml down             # Stop all services
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml logs -f          # View logs
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml ps               # Check status
 
-# Docker Compose
-docker-compose up -d              # Start services
-docker-compose down               # Stop services
-docker-compose logs -f backend    # View backend logs
-docker-compose exec database psql -U admin -d infraprime  # Database access
+# Service Management
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml logs -f backend  # View backend logs
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec database psql -U admin -d infraprime  # Database access
 
-# Building
-./scripts/build.sh                # Build all images
-./scripts/cleanup.sh              # Clean up resources
+# Troubleshooting
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml down -v          # Stop and remove volumes
+docker system prune -a                                                          # Clean up all Docker resources
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d    # Fresh start
 ```
 
 ---
