@@ -16,13 +16,9 @@ Thank you for your interest in contributing to InfraPrime! This document provide
    git clone https://github.com/yungkolt/InfraPrime.git
    cd InfraPrime
    ```
-3. Run the setup script:
+3. Start the development environment:
    ```bash
-   ./scripts/setup.sh
-   ```
-4. Start the development environment:
-   ```bash
-   ./scripts/docker-dev.sh start
+   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
    ```
 
 ## 📝 Development Guidelines
@@ -36,7 +32,7 @@ Thank you for your interest in contributing to InfraPrime! This document provide
 ### Testing
 - Write tests for new features
 - Ensure all tests pass before submitting PR
-- Run tests with: `./scripts/docker-dev.sh test`
+- Run tests with: `docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec backend pytest`
 
 ### Docker Best Practices
 - Use specific image tags (not `latest`)

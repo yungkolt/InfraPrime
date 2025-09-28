@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Comprehensive Docker deployment documentation
 - Security scanning with Trivy integration
-- Development workflow automation scripts
+- Simplified Docker Compose workflow
 - Multi-stage Docker builds for optimization
 - Health checks for all services
 - Health monitoring and logging
@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security vulnerabilities in base images
 - Development environment setup issues
 
-## [1.0.0] - 2024-09-27
+## [1.0.0] - 2025-09-27
 
 ### Added
 - Initial release of InfraPrime three-tier application
@@ -64,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Network isolation
 - Data persistence
 
-## [0.1.0] - 2024-09-20
+## [0.1.0] - 2025-09-20
 
 ### Added
 - Initial project structure
