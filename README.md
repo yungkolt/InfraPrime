@@ -280,7 +280,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact & Support
 
-**Project Creator**: [Yung Kolt](https://github.com/yungkolt)
+**Project Creator**: [Kolton Smith](https://github.com/yungkolt)
 - **Email**: koltsmi04@gmail.com
 - **GitHub**: [yungkolt](https://github.com/yungkolt)
 
