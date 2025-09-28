@@ -26,6 +26,7 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 | **pgAdmin** | http://localhost:5050 | Database admin GUI (admin@infraprime.local/admin123) | `--profile tools` |
 | **MailHog** | http://localhost:8025 | Email testing | `--profile dev-tools` |
 | **MinIO** | http://localhost:9001 | S3 storage (minioadmin/minioadmin123) | `--profile dev-tools` |
+| **Trivy** | Container | Security vulnerability scanner | `--profile security` |
 
 > **Note:** The PostgreSQL database runs automatically with core services. pgAdmin is just a web interface to manage it - you only need it for database administration tasks.
 
@@ -58,6 +59,12 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile dev-too
 
 # Start everything (core + optional)
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile tools --profile dev-tools up -d
+
+# Start security scanner
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile security up -d
+
+# Run security scan
+./scripts/scan-security.sh
 ```
 
 ## 🧪 Test the Application

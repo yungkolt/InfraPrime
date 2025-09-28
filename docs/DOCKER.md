@@ -68,6 +68,7 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile dev-too
 | **pgAdmin** | http://localhost:5050 | admin@infraprime.local / admin123 | `--profile tools` |
 | **MailHog** | http://localhost:8025 | - | `--profile dev-tools` |
 | **MinIO** | http://localhost:9001 | minioadmin / minioadmin123 | `--profile dev-tools` |
+| **Trivy** | Container | Security scanner | `--profile security` |
 
 > **Important:** The PostgreSQL database runs automatically with core services. pgAdmin is a web-based database administration tool that provides a GUI to manage the database - you only need it for database administration tasks like browsing tables, running SQL queries, or monitoring performance.
 
@@ -88,6 +89,29 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile dev-too
 |----------|--------|-------------|
 | `/api/*` | All | All backend API endpoints |
 | `/health` | GET | Nginx health check |
+
+## 🔒 Security Scanning
+
+### Automated Security Scanning
+```bash
+# Start Trivy security scanner
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile security up -d
+
+# Run comprehensive security scan
+./scripts/scan-security.sh
+
+# Manual Trivy commands
+docker-compose exec trivy trivy image infraprime-backend:latest
+docker-compose exec trivy trivy image --severity HIGH,CRITICAL infraprime-backend:latest
+docker-compose exec trivy trivy image --format json infraprime-backend:latest
+```
+
+### Security Scan Features
+- **Vulnerability Detection**: Scans for known CVEs in base images and dependencies
+- **Severity Filtering**: Focus on HIGH and CRITICAL vulnerabilities
+- **Multiple Formats**: Table, JSON output for different use cases
+- **CI/CD Ready**: Exit codes for automated security gates
+- **Cached Results**: Faster subsequent scans with Trivy cache
 
 ## Common Commands
 

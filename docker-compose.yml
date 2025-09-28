@@ -191,6 +191,34 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Trivy Security Scanner
+  trivy:
+    image: aquasec/trivy:latest
+    container_name: infraprime-trivy
+    restart: "no"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - trivy_cache:/root/.cache/trivy
+    networks:
+      - infraprime-network
+    profiles:
+      - security
+    entrypoint: ["/bin/sh"]
+    command: >
+      -c "
+        echo 'Trivy Security Scanner Ready' &&
+        echo 'Available commands:' &&
+        echo '  docker-compose exec trivy trivy image infraprime-backend:latest' &&
+        echo '  docker-compose exec trivy trivy image --severity HIGH,CRITICAL infraprime-backend:latest' &&
+        echo '  docker-compose exec trivy trivy image --format table infraprime-backend:latest' &&
+        tail -f /dev/null
+      "
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 
 # Named Volumes for Persistent Data
 volumes:
@@ -207,6 +235,8 @@ volumes:
   devtools_cache:
     driver: local
   pgadmin_data:
+    driver: local
+  trivy_cache:
     driver: local
 
 # Custom Network

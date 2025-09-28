@@ -79,6 +79,9 @@ curl http://localhost:5000/health          # Health check
 curl http://localhost:5000/api/data        # Application data
 curl http://localhost:5000/api/users       # List users
 curl http://localhost:5000/api/stats       # API statistics
+
+# Security scanning
+./scripts/scan-security.sh                 # Run vulnerability scan
 ```
 
 ### Manual Setup
@@ -168,7 +171,7 @@ InfraPrime/
 ### Container Security
 - **Non-root Users**: All containers run as non-root users
 - **Image Scanning**: Automated vulnerability scanning with Trivy
-- **Minimal Base Images**: Using Alpine Linux for smaller attack surface
+- **Optimized Base Images**: Alpine for lightweight services (frontend, database, cache, proxy), Debian for Python backend
 - **Secrets Management**: Environment variables for sensitive data
 
 ### Network Security

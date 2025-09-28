@@ -110,6 +110,8 @@ services:
 volumes:
   minio_data:
     driver: local
+  trivy_cache:
+    driver: local
 
 # Override network for development
 networks:
