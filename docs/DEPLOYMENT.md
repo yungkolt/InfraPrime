@@ -31,7 +31,7 @@
 ### 1. Clone and Setup
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/InfraPrime.git
+git clone https://github.com/yungkolt/InfraPrime.git
 cd InfraPrime
 
 # Run the automated setup
@@ -157,10 +157,6 @@ services:
 - `devtools` - Development utilities container
 - `pgadmin` - Database administration interface
 
-### Monitoring (`--profile monitoring`)
-- `prometheus` - Metrics collection
-- `grafana` - Metrics visualization
-
 ### Extended Tools (`--profile dev-tools`)
 - `mailhog` - Email testing
 - `minio` - S3-compatible storage
@@ -228,12 +224,9 @@ docker-compose logs -f --since="2024-01-01T00:00:00" backend
 
 ### Metrics Collection
 ```bash
-# Access Prometheus
-open http://localhost:9090
-
-# Access Grafana
-open http://localhost:3001
-# Default credentials: admin / admin123
+# Access Database Admin
+open http://localhost:5050
+# Default credentials: admin@infraprime.local / admin123
 ```
 
 ### Custom Monitoring

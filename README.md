@@ -13,9 +13,9 @@ Modern applications require reliable, scalable infrastructure that can be easily
 
 ### 🏆 Key Achievements
 - **100% Containerized** using Docker and Docker Compose
-- **Zero-downtime deployments** with health checks and graceful shutdowns
-- **99.9% uptime** target with multi-container architecture
-- **Sub-second response times** with caching and optimization
+- **Health checks** and graceful shutdowns
+- **High availability** with multi-container architecture
+- **Optimized performance** with caching and efficient architecture
 - **Production-ready security** with non-root users and image scanning
 - **Cost-effective** architecture running locally with minimal resources
 
@@ -32,11 +32,11 @@ Internet → Nginx (Reverse Proxy) → Backend (Flask) → Database (PostgreSQL)
 
 ### Tech Stack
 - **Frontend**: React 18, Progressive Web App, Responsive Design
-- **Backend**: Python Flask, RESTful APIs, JWT Authentication
+- **Backend**: Python Flask, RESTful APIs
 - **Database**: PostgreSQL with automated backups and health checks
 - **Cache**: Redis for session management and caching
 - **Infrastructure**: Docker, Docker Compose, Nginx
-- **Monitoring**: Prometheus, Grafana, custom metrics
+- **Monitoring**: Health checks and logging
 - **Security**: Container security, image scanning, non-root users
 
 ## 📊 Project Metrics
@@ -44,9 +44,9 @@ Internet → Nginx (Reverse Proxy) → Backend (Flask) → Database (PostgreSQL)
 | Metric | Value | Description |
 |--------|--------|-------------|
 | **Containerization** | 100% automated | All services containerized with Docker |
-| **Test Coverage** | 85%+ | Comprehensive unit and integration tests |
-| **Response Time** | <250ms (p95) | Application performance target |
-| **Availability** | 99.9% | Multi-container deployment with health checks |
+| **Test Coverage** | Comprehensive | Unit and integration tests included |
+| **Response Time** | Optimized | Application performance optimized |
+| **Availability** | High | Multi-container deployment with health checks |
 | **Security Score** | A+ | Container security best practices |
 | **Resource Usage** | ~2GB RAM | Efficient resource utilization |
 
@@ -60,7 +60,7 @@ Internet → Nginx (Reverse Proxy) → Backend (Flask) → Database (PostgreSQL)
 ### Local Development (2 minutes)
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/InfraPrime.git
+git clone https://github.com/yungkolt/InfraPrime.git
 cd InfraPrime
 
 # Run the setup script
@@ -89,17 +89,27 @@ docker-compose logs -f
 
 ```
 InfraPrime/
-├── 📁 application/
+├── 📁 application/              # Application source code
 │   ├── 📁 backend/              # Flask API application
 │   │   ├── 📁 src/              # Application source code
+│   │   │   ├── app.py           # Main Flask application
+│   │   │   ├── config.py        # Configuration settings
+│   │   │   └── models.py        # Database models
 │   │   ├── 📁 tests/            # Unit and integration tests
 │   │   ├── Dockerfile           # Multi-stage container build
-│   │   └── requirements.txt     # Python dependencies
+│   │   ├── requirements.txt     # Python dependencies
+│   │   └── env.example          # Environment configuration template
 │   └── 📁 frontend/             # React web application
 │       ├── 📁 src/              # React components and logic
+│       │   ├── app.js           # Main application logic
+│       │   ├── index.html       # HTML template
+│       │   ├── styles.css       # CSS styles
+│       │   └── manifest.json    # PWA manifest
 │       ├── 📁 tests/            # Frontend test suite
+│       ├── Dockerfile           # Frontend container build
 │       ├── package.json         # Node.js dependencies
-│       └── jest.config.js       # Test configuration
+│       ├── jest.config.js       # Test configuration
+│       └── env.example          # Environment configuration template
 ├── 📁 scripts/                  # Automation scripts
 │   ├── docker-dev.sh           # Docker development commands
 │   ├── build.sh                # Build Docker images
@@ -107,14 +117,23 @@ InfraPrime/
 │   └── cleanup.sh              # Cleanup resources
 ├── 📁 docker/                   # Docker configuration
 │   ├── 📁 nginx/               # Reverse proxy configuration
-│   ├── 📁 database/            # Database initialization
-│   ├── docker-compose.yml      # Main services
-│   └── docker-compose.dev.yml  # Development overrides
+│   │   ├── nginx.conf          # Main nginx configuration
+│   │   └── conf.d/             # Additional configurations
+│   └── 📁 database/            # Database initialization
+│       ├── init/               # Database initialization scripts
+│       └── dev-data/           # Sample data
 ├── 📁 docs/                     # Comprehensive documentation
+│   ├── DEPLOYMENT.md           # Deployment guide
 │   ├── DOCKER.md               # Docker development guide
-│   ├── TROUBLESHOOTING.md      # Issue resolution guide
-│   └── SECURITY.md             # Security documentation
-└── README.md                   # This file
+│   ├── SECURITY.md             # Security documentation
+│   └── TROUBLESHOOTING.md      # Issue resolution guide
+├── 📄 docker-compose.yml       # Main services configuration
+├── 📄 docker-compose.dev.yml   # Development overrides
+├── 📄 .gitignore               # Git ignore rules
+├── 📄 LICENSE                  # MIT License
+├── 📄 CHANGELOG.md             # Version history
+├── 📄 CONTRIBUTING.md          # Contribution guidelines
+└── 📄 README.md                # This file
 ```
 
 ## 🛡️ Security Features
@@ -134,7 +153,7 @@ InfraPrime/
 - **Input Validation**: Comprehensive input sanitization
 - **CORS Configuration**: Proper cross-origin resource sharing
 - **Security Headers**: HSTS, CSP, X-Frame-Options
-- **Authentication**: JWT-based with refresh tokens
+- **API Security**: Input validation and CORS configuration
 
 ## 📈 Monitoring & Observability
 
@@ -145,9 +164,9 @@ InfraPrime/
 - **Health Metrics**: Service availability and performance
 
 ### Monitoring Stack
-- **Prometheus**: Metrics collection and storage
-- **Grafana**: Visualization and dashboards
-- **Custom Dashboards**: Application-specific monitoring
+- **Health Checks**: Docker health checks for all services
+- **Application Logging**: Centralized logging with Docker
+- **Performance Monitoring**: Response time and throughput tracking
 
 ### Health Checks
 - **Container Health**: Docker health checks for all services
@@ -157,10 +176,10 @@ InfraPrime/
 ## 🧪 Testing Strategy
 
 ### Automated Testing
-- **Unit Tests**: 85%+ code coverage for backend and frontend
-- **Integration Tests**: API endpoint testing with test database
-- **Security Tests**: Vulnerability scanning and dependency checking
-- **Performance Tests**: Load testing with realistic scenarios
+- **Unit Tests**: Backend and frontend test suites included
+- **Integration Tests**: API endpoint testing capabilities
+- **Security Testing**: Container vulnerability scanning
+- **Performance Tests**: Basic performance validation
 
 ### Quality Gates
 - **Code Quality**: ESLint, Pylint, code formatting
@@ -188,6 +207,7 @@ InfraPrime/
 | Document | Description |
 |----------|-------------|
 | [🐳 Docker Guide](docs/DOCKER.md) | Complete Docker development guide |
+| [🚀 Deployment Guide](docs/DEPLOYMENT.md) | Comprehensive deployment instructions |
 | [🔧 Troubleshooting](docs/TROUBLESHOOTING.md) | Issue resolution and debugging |
 | [🛡️ Security Guide](docs/SECURITY.md) | Security implementation details |
 
@@ -206,7 +226,7 @@ InfraPrime/
 - **Security Hardening**: Non-root users and minimal images
 
 ### Monitoring & Observability
-- **Real-time Metrics**: Prometheus and Grafana integration
+- **Real-time Monitoring**: Health checks and performance tracking
 - **Log Aggregation**: Centralized logging with structured output
 - **Health Endpoints**: API endpoints for service status
 - **Performance Monitoring**: Response time and throughput tracking
@@ -233,12 +253,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact & Support
 
-**Project Creator**: [Your Name]
-- **Email**: your.email@example.com
-- **LinkedIn**: [Your LinkedIn Profile](https://linkedin.com/in/yourprofile)
-- **GitHub**: [Your GitHub Profile](https://github.com/yourusername)
+**Project Creator**: [Yung Kolt](https://github.com/yungkolt)
+- **Email**: koltsmi04@gmail.com
+- **GitHub**: [yungkolt](https://github.com/yungkolt)
 
-**Project Repository**: [https://github.com/yourusername/InfraPrime](https://github.com/yourusername/InfraPrime)
+**Project Repository**: [https://github.com/yungkolt/InfraPrime](https://github.com/yungkolt/InfraPrime)
 
 ---
 

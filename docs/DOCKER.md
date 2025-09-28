@@ -37,8 +37,7 @@ docker-compose --profile tools up -d
 ```bash
 docker-compose --profile monitoring up -d
 ```
-- `prometheus` - Metrics collection
-- `grafana` - Metrics visualization
+- `pgadmin` - Database administration interface
 
 ### Extended Dev Tools (`--profile dev-tools`)
 ```bash
@@ -57,8 +56,6 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile dev-too
 | Database | localhost:5432 | admin / dev_password_123 |
 | Redis | localhost:6379 | - |
 | pgAdmin | http://localhost:5050 | admin@infraprime.local / admin123 |
-| Prometheus | http://localhost:9090 | - |
-| Grafana | http://localhost:3001 | admin / admin123 |
 | MailHog | http://localhost:8025 | - |
 | MinIO | http://localhost:9001 | minioadmin / minioadmin123 |
 
@@ -131,7 +128,7 @@ chmod +x generate-ssl.sh
 ### Persistent Data
 - `postgres_data` - Database files
 - `redis_data` - Redis persistence
-- `grafana_data` - Grafana dashboards and settings
+- `pgadmin_data` - Database administration settings
 
 ## Troubleshooting
 

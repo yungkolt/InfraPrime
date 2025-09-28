@@ -276,6 +276,7 @@ class InfraPrimeApp {
             <footer class="app-footer">
                 <p>Last updated: <span id="last-updated">Never</span></p>
                 <p>Environment: ${this.config.environment} | Version: 1.0.0</p>
+                <p>Created by <a href="https://github.com/yungkolt" target="_blank" rel="noopener">Yung Kolt</a></p>
             </footer>
         `;
     }
@@ -296,9 +297,9 @@ class InfraPrimeApp {
                             ${UIComponents.createStatusBadge(state.apiStatus)}
                         </div>
                         <div class="status-details">
-                            <p>✅ Application Load Balancer: Healthy</p>
-                            <p>✅ ECS Service: Running</p>
-                            <p>✅ RDS Database: Available</p>
+                            <p>✅ Nginx Reverse Proxy: Healthy</p>
+                            <p>✅ Backend Service: Running</p>
+                            <p>✅ PostgreSQL Database: Available</p>
                         </div>
                     </div>
                 `;

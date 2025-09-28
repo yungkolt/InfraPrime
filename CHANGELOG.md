@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Development workflow automation scripts
 - Multi-stage Docker builds for optimization
 - Health checks for all services
-- Monitoring with Prometheus and Grafana
+- Health monitoring and logging
 
 ### Changed
 - Removed CI/CD pipeline dependencies
@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Database**: PostgreSQL 15 with health checks
 - **Cache**: Redis 7 for session management
 - **Infrastructure**: Docker, Docker Compose, Nginx
-- **Monitoring**: Prometheus, Grafana
+- **Monitoring**: Health checks and logging
 - **Security**: Container security, image scanning
 
 ### Features

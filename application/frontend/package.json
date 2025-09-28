@@ -23,7 +23,7 @@
     "three-tier",
     "cloud"
   ],
-  "author": "Your Name",
+  "author": "Yung Kolt <koltsmi04@gmail.com> (https://github.com/yungkolt)",
   "license": "MIT",
   "devDependencies": {
     "clean-css-cli": "^5.6.2",

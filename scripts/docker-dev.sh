@@ -60,7 +60,6 @@ start_services() {
         echo "  Frontend: http://localhost:8080"
         echo "  Backend API: http://localhost:5000"
         echo "  Database Admin: http://localhost:5050"
-        echo "  Monitoring: http://localhost:3001 (Grafana)"
         echo ""
         echo "📊 Health Check:"
         curl -s http://localhost:8080/health | python3 -m json.tool 2>/dev/null || echo "Health check endpoint not ready yet"

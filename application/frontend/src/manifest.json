@@ -1,7 +1,7 @@
 {
   "name": "InfraPrime Three-Tier Application",
   "short_name": "InfraPrime",
-  "description": "Production-ready three-tier cloud application demonstrating infrastructure as code principles",
+  "description": "Production-ready three-tier cloud application demonstrating infrastructure as code principles by Yung Kolt",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#2563eb",

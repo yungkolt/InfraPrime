@@ -13,7 +13,7 @@ Thank you for your interest in contributing to InfraPrime! This document provide
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/yourusername/InfraPrime.git
+   git clone https://github.com/yungkolt/InfraPrime.git
    cd InfraPrime
    ```
 3. Run the setup script:
