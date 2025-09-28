@@ -23,9 +23,11 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 ### Optional Services (Require Additional Commands)
 | Service | URL | Description | Command |
 |---------|-----|-------------|---------|
-| **pgAdmin** | http://localhost:5050 | Database admin (admin@infraprime.local/admin123) | `--profile tools` |
+| **pgAdmin** | http://localhost:5050 | Database admin GUI (admin@infraprime.local/admin123) | `--profile tools` |
 | **MailHog** | http://localhost:8025 | Email testing | `--profile dev-tools` |
 | **MinIO** | http://localhost:9001 | S3 storage (minioadmin/minioadmin123) | `--profile dev-tools` |
+
+> **Note:** The PostgreSQL database runs automatically with core services. pgAdmin is just a web interface to manage it - you only need it for database administration tasks.
 
 ## 🔧 Essential Commands
 

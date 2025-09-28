@@ -69,6 +69,8 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile dev-too
 | **MailHog** | http://localhost:8025 | - | `--profile dev-tools` |
 | **MinIO** | http://localhost:9001 | minioadmin / minioadmin123 | `--profile dev-tools` |
 
+> **Important:** The PostgreSQL database runs automatically with core services. pgAdmin is a web-based database administration tool that provides a GUI to manage the database - you only need it for database administration tasks like browsing tables, running SQL queries, or monitoring performance.
+
 ## Common Commands
 
 ### Development Workflow
