@@ -129,11 +129,6 @@ InfraPrime/
 │       ├── package-lock.json    # Dependency lock file
 │       ├── jest.config.js       # Test configuration
 │       └── env.example          # Environment configuration template
-├── 📁 scripts/                  # Automation scripts
-│   ├── docker-dev.sh           # Docker development commands
-│   ├── build.sh                # Build Docker images
-│   ├── setup.sh                # Environment setup
-│   └── cleanup.sh              # Cleanup resources
 ├── 📁 docker/                   # Docker configuration
 │   ├── 📁 nginx/               # Reverse proxy configuration
 │   │   ├── nginx.conf          # Main nginx configuration
@@ -216,7 +211,7 @@ InfraPrime/
 ## 🚀 Development Workflow
 
 ### Docker Development Process
-1. **Environment Setup**: One-command setup with `./scripts/setup.sh`
+1. **Environment Setup**: One-command setup with Docker Compose
 2. **Service Management**: Start/stop services with Docker Compose
 3. **Code Development**: Hot reload with volume mounting
 4. **Testing**: Run tests within containers
@@ -240,7 +235,7 @@ InfraPrime/
 ## 🎯 Key Features
 
 ### Development Experience
-- **One-Command Setup**: `./scripts/setup.sh` gets everything running
+- **One-Command Setup**: `docker-compose` gets everything running
 - **Hot Reload**: Code changes reflected immediately
 - **Comprehensive Logging**: Centralized logging with Docker
 - **Database Management**: Easy database access and management

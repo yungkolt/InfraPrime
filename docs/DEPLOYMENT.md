@@ -34,17 +34,14 @@
 git clone https://github.com/yungkolt/InfraPrime.git
 cd InfraPrime
 
-# Run the automated setup
-./scripts/setup.sh
+# Start the development environment
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 ```
 
 ### 2. Start the Application
 ```bash
 # Start all services
-./scripts/docker-dev.sh start
-
-# Or manually with Docker Compose
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 ```
 
 ### 3. Access the Application
@@ -251,8 +248,8 @@ docker-compose exec database pg_dump -U admin infraprime > backup_$(date +%Y%m%d
 # Restore database from backup
 docker-compose exec -T database psql -U admin -d infraprime < backup_20240101_120000.sql
 
-# Automated backup script
-./scripts/backup-database.sh
+# Manual backup command
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec database pg_dump -U admin infraprime > backup.sql
 ```
 
 ### Volume Backups
