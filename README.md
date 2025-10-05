@@ -114,7 +114,6 @@ InfraPrime/
 │   │   │   ├── conftest.py      # Pytest configuration
 │   │   │   ├── test_app.py      # Application tests
 │   │   │   └── test_basic.py    # Basic functionality tests
-│   │   ├── 📁 logs/             # Application logs
 │   │   ├── Dockerfile           # Multi-stage container build
 │   │   ├── requirements.txt     # Production Python dependencies
 │   │   ├── requirements-dev.txt # Development Python dependencies
@@ -126,36 +125,36 @@ InfraPrime/
 │       │   ├── styles.css       # CSS styles
 │       │   ├── manifest.json    # PWA manifest
 │       │   └── sw.js            # Service worker
-│       ├── 📁 dist/             # Built frontend assets
 │       ├── 📁 tests/            # Frontend test suite
 │       │   ├── __mocks__/       # Test mocks
+│       │   │   └── fileMock.js  # File mock for tests
 │       │   ├── app.test.js      # Application tests
 │       │   ├── basic.test.js    # Basic functionality tests
 │       │   └── setup.js         # Test setup
-│       ├── 📁 node_modules/     # Node.js dependencies
 │       ├── Dockerfile           # Frontend container build
 │       ├── package.json         # Node.js dependencies
-│       ├── package-lock.json    # Dependency lock file
 │       ├── jest.config.js       # Test configuration
+│       ├── .eslintrc.json       # ESLint configuration
 │       └── env.example          # Environment configuration template
 ├── 📁 docker/                   # Docker configuration
 │   ├── 📁 nginx/               # Reverse proxy configuration
 │   │   ├── nginx.conf          # Main nginx configuration
-│   │   ├── conf.d/             # Additional configurations
+│   │   ├── 📁 conf.d/           # Additional configurations
 │   │   │   ├── default.conf    # Default server config
 │   │   │   └── locations.conf  # Location-specific configs
-│   │   ├── generate-ssl.sh     # SSL certificate generation
-│   │   └── ssl/                # SSL certificates
+│   │   └── generate-ssl.sh     # SSL certificate generation
 │   └── 📁 database/            # Database initialization
-│       ├── init/               # Database initialization scripts
+│       ├── 📁 init/             # Database initialization scripts
 │       │   └── 01-init.sql     # Initial schema
-│       └── dev-data/           # Sample data
+│       └── 📁 dev-data/         # Sample data
 │           └── sample-data.sql # Sample data for development
 ├── 📁 docs/                     # Comprehensive documentation
 │   ├── DEPLOYMENT.md           # Deployment guide
 │   ├── DOCKER.md               # Docker development guide
 │   ├── SECURITY.md             # Security documentation
 │   └── TROUBLESHOOTING.md      # Issue resolution guide
+├── 📁 scripts/                  # Utility scripts
+│   └── scan-security.sh        # Security vulnerability scanner
 ├── 📄 docker-compose.yml       # Main services configuration
 ├── 📄 docker-compose.dev.yml   # Development overrides
 ├── 📄 QUICK_START.md           # Quick start guide
